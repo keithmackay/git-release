@@ -28,10 +28,85 @@ Invoke `/gitrelease` (or say "release this," "make this public," "set up GitHub 
 ### Claude Code
 
 ```bash
-cp -r ~/.claude/skills/gitrelease/ ~/.claude/skills/gitrelease/
+cp -r /path/to/gitrelease/ ~/.claude/skills/gitrelease/
 ```
 
-Already installed if this file is at `~/.claude/skills/gitrelease/`. Invoke with `/gitrelease`.
+Or symlink:
+```bash
+ln -s /path/to/gitrelease/ ~/.claude/skills/gitrelease
+```
+
+Then invoke with: `/gitrelease`
+
+### Codex
+
+Place the plugin directory where Codex can find it, then add an entry to your marketplace:
+
+**`~/.agents/plugins/marketplace.json`** (create if absent):
+```json
+{
+  "name": "personal",
+  "interface": { "displayName": "Personal Plugins" },
+  "plugins": [
+    {
+      "name": "gitrelease",
+      "source": { "source": "local", "path": "/path/to/gitrelease/" },
+      "policy": { "installation": "AVAILABLE", "authentication": "ON_INSTALL" },
+      "category": "Productivity"
+    }
+  ]
+}
+```
+
+### Antigravity
+
+**Global install** (all workspaces):
+```bash
+cp -r /path/to/gitrelease/ ~/.gemini/antigravity/skills/gitrelease/
+```
+
+**Workspace install** (current project only):
+```bash
+cp -r /path/to/gitrelease/ .agents/skills/gitrelease/
+```
+
+The root `SKILL.md` has no Claude Code-specific metadata, so it is used as-is — no separate Antigravity variant is needed.
+
+Skills are auto-discovered. You can also mention the skill by name to force activation.
+
+### Gemini CLI
+
+Gemini CLI installs extensions directly from GitHub:
+
+```bash
+gemini extensions install https://github.com/keithmackay/gitrelease
+```
+
+To update:
+```bash
+gemini extensions update gitrelease
+```
+
+The skill is auto-discovered from `GEMINI.md` after installation.
+
+## Compatibility
+
+| Feature | Claude Code | Codex | Antigravity | Gemini CLI |
+|---------|:-----------:|:-----:|:-----------:|:----------:|
+| Core skill | ✅ | ✅ | ✅ | ✅ |
+
+No Claude Code-specific frontmatter (`metadata`, `retrieval`, `tags`), sub-documents, or subagent dispatch is used by this skill, so there are no platform gaps to document — it ports cleanly to all four platforms.
+
+Legend: ✅ Supported · ❌ Not supported
+
+## References
+
+- **Claude Code Skills:** https://code.claude.com/docs/en/skills
+- **Claude Code Complete Guide (PDF):** https://resources.anthropic.com/hubfs/The-Complete-Guide-to-Building-Skill-for-Claude.pdf
+- **Codex Plugins:** https://developers.openai.com/codex/plugins/build
+- **Antigravity Skills:** https://antigravity.google/docs/skills
+- **Gemini CLI Extensions:** https://github.com/google-gemini/gemini-cli/blob/main/docs/extension.md
+- **Agent Skills open standard:** https://agentskills.io/home
 
 ## Contributing
 
