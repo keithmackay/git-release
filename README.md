@@ -23,6 +23,10 @@ Invoke `/git-release` (or say "release this," "make this public," "set up GitHub
 7. Creates a tagged GitHub release with `gh release create --generate-notes --latest`
 8. Prints a summary table of what was done or skipped at each step
 
+### Help convention
+
+Flag-parsing in a skill is prompt-level, not enforced by the harness, so `--help` is handled by convention rather than code: `SKILL.md` contains a short `## Flags` section instructing the agent that on `--help` it should read and display `help.md` — found alongside `SKILL.md` in the same skill folder — verbatim, and skip the workflow. Keeping the help text in its own file (rather than inlined in `SKILL.md`) keeps the workflow instructions focused on what the agent should *do*, and the help text focused on what a user should *read*. Since this repo ships `SKILL.md` in two locations (root and `skills/git-release/`, see Compatibility below), `help.md` is duplicated alongside each one.
+
 ## Installation
 
 ### Claude Code
