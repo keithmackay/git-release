@@ -1,5 +1,5 @@
 {
-  "name": "gitrelease",
+  "name": "git-release",
   "description": "Use when preparing a project for public release on GitHub - adds MIT license, verifies README and .gitignore, creates a GitHub remote if needed, applies branch protection requiring PRs, and creates a tagged GitHub release",
   "version": "1.0.0",
   "contextFileName": "GEMINI.md"

@@ -1,4 +1,4 @@
-# gitrelease
+# git-release
 
 Prepares a local git project for public release on GitHub in one pass: adds an MIT license if missing, verifies README and `.gitignore`, creates a GitHub remote if one doesn't exist, applies branch protection requiring pull requests, and cuts a tagged release.
 
@@ -12,7 +12,7 @@ Prepares a local git project for public release on GitHub in one pass: adds an M
 
 ## Usage
 
-Invoke `/gitrelease` (or say "release this," "make this public," "set up GitHub for this project") from inside a git repository you want to prepare for public release. It walks through, in order:
+Invoke `/git-release` (or say "release this," "make this public," "set up GitHub for this project") from inside a git repository you want to prepare for public release. It walks through, in order:
 
 1. Confirms the current directory is a git repo and identifies the default branch
 2. Adds an MIT `LICENSE` if one doesn't exist
@@ -28,15 +28,15 @@ Invoke `/gitrelease` (or say "release this," "make this public," "set up GitHub 
 ### Claude Code
 
 ```bash
-cp -r /path/to/gitrelease/ ~/.claude/skills/gitrelease/
+cp -r /path/to/git-release/ ~/.claude/skills/git-release/
 ```
 
 Or symlink:
 ```bash
-ln -s /path/to/gitrelease/ ~/.claude/skills/gitrelease
+ln -s /path/to/git-release/ ~/.claude/skills/git-release
 ```
 
-Then invoke with: `/gitrelease`
+Then invoke with: `/git-release`
 
 ### Codex
 
@@ -49,8 +49,8 @@ Place the plugin directory where Codex can find it, then add an entry to your ma
   "interface": { "displayName": "Personal Plugins" },
   "plugins": [
     {
-      "name": "gitrelease",
-      "source": { "source": "local", "path": "/path/to/gitrelease/" },
+      "name": "git-release",
+      "source": { "source": "local", "path": "/path/to/git-release/" },
       "policy": { "installation": "AVAILABLE", "authentication": "ON_INSTALL" },
       "category": "Productivity"
     }
@@ -62,12 +62,12 @@ Place the plugin directory where Codex can find it, then add an entry to your ma
 
 **Global install** (all workspaces):
 ```bash
-cp -r /path/to/gitrelease/ ~/.gemini/antigravity/skills/gitrelease/
+cp -r /path/to/git-release/ ~/.gemini/antigravity/skills/git-release/
 ```
 
 **Workspace install** (current project only):
 ```bash
-cp -r /path/to/gitrelease/ .agents/skills/gitrelease/
+cp -r /path/to/git-release/ .agents/skills/git-release/
 ```
 
 The root `SKILL.md` has no Claude Code-specific metadata, so it is used as-is — no separate Antigravity variant is needed.
@@ -79,12 +79,12 @@ Skills are auto-discovered. You can also mention the skill by name to force acti
 Gemini CLI installs extensions directly from GitHub:
 
 ```bash
-gemini extensions install https://github.com/keithmackay/gitrelease
+gemini extensions install https://github.com/keithmackay/git-release
 ```
 
 To update:
 ```bash
-gemini extensions update gitrelease
+gemini extensions update git-release
 ```
 
 The skill is auto-discovered from `GEMINI.md` after installation.

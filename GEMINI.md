@@ -1,1 +1,1 @@
-@./skills/gitrelease/SKILL.md
+@./skills/git-release/SKILL.md
