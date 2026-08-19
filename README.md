@@ -12,7 +12,7 @@ Prepares a local git project for public release on GitHub in one pass: adds an M
 
 ## Usage
 
-Invoke `/git-release` (or say "release this," "make this public," "set up GitHub for this project") from inside a git repository you want to prepare for public release. It walks through, in order:
+Invoke `/git-release` (or say "release this," "make this public," "set up GitHub for this project") from inside a git repository you want to prepare for public release. Run `/git-release --help` to print what it does, what it needs, and usage without making any changes. Otherwise it walks through, in order:
 
 1. Confirms the current directory is a git repo and identifies the default branch
 2. Adds an MIT `LICENSE` if one doesn't exist
