@@ -5,10 +5,11 @@ Prepares a local git project for public release on GitHub in one pass: adds an M
 ## Highlights
 
 - **Idempotent** — every step checks current state first and reports "already exists, skipping" rather than clobbering existing files or config
-- **Doesn't overreach on docs** — if README.md is missing or a stub, it warns and points at `/readme` rather than generating one itself
+- **Doesn't overreach on docs** — if README.md is missing or a stub, it warns and points at `/make-readme` rather than generating one itself
 - **Sane branch protection defaults** — requires 1 approving PR review, dismisses stale reviews on new pushes, blocks force-push and branch deletion, while leaving admin bypass on so the owner can still push directly
 - **Version-aware releases** — suggests `v1.0.0` for a first release, or the next patch/minor/major based on the latest existing tag
-- **Full summary table** — reports exactly what was done vs. skipped at each of the 7 steps
+- **Full summary table** — reports exactly what was done vs. skipped at each of the 9 steps
+- **Defers, doesn't duplicate** — for both docs and its own help mechanism, this skill only checks and warns; generating either is `/make-readme`'s job
 
 ## Usage
 
@@ -16,16 +17,15 @@ Invoke `/git-release` (or say "release this," "make this public," "set up GitHub
 
 1. Confirms the current directory is a git repo and identifies the default branch
 2. Adds an MIT `LICENSE` if one doesn't exist
-3. Checks `README.md` exists and has real content (warns and defers to `/readme` if not)
-4. Checks `.gitignore` exists (warns if missing)
-5. Creates a GitHub remote via `gh repo create --public --source=. --push` if none exists, or confirms the existing one is up to date
-6. Applies branch protection (PR required, 1 approval, stale reviews dismissed, force-push and deletion blocked) via the GitHub API
-7. Creates a tagged GitHub release with `gh release create --generate-notes --latest`
-8. Prints a summary table of what was done or skipped at each step
+3. Checks `README.md` exists and has real content (warns and defers to `/make-readme` if not)
+4. For skill/plugin projects, checks for a `--help`/`:help` mechanism backed by `help.md` (warns and defers to `/make-readme` if missing — this skill checks but never creates it)
+5. Checks `.gitignore` exists (warns if missing)
+6. Creates a GitHub remote via `gh repo create --public --source=. --push` if none exists, or confirms the existing one is up to date
+7. Applies branch protection (PR required, 1 approval, stale reviews dismissed, force-push and deletion blocked) via the GitHub API
+8. Creates a tagged GitHub release with `gh release create --generate-notes --latest`
+9. Prints a summary table of what was done or skipped at each step
 
-### Help convention
-
-Flag-parsing in a skill is prompt-level, not enforced by the harness, so `--help` is handled by convention rather than code: `SKILL.md` contains a short `## Flags` section instructing the agent that on `--help` it should read and display `help.md` — found alongside `SKILL.md` in the same skill folder — verbatim, and skip the workflow. Keeping the help text in its own file (rather than inlined in `SKILL.md`) keeps the workflow instructions focused on what the agent should *do*, and the help text focused on what a user should *read*. Since this repo ships `SKILL.md` in two locations (root and `skills/git-release/`, see Compatibility below), `help.md` is duplicated alongside each one.
+This skill's own `--help` follows the same convention it checks other skills for: `SKILL.md` has a short `## Flags` section pointing at a `help.md` file in the same folder, which is read and displayed verbatim. `/make-readme` is what actually generates this pattern for a project that's missing it — see that skill's docs for details.
 
 ## Installation
 

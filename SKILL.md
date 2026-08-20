@@ -52,7 +52,18 @@ Check if `README.md` exists and has more than just a title line.
 
 **If present:** Report "README.md found." Continue.
 
-### Step 4: Check .gitignore
+### Step 4: Check Help Mechanism (Skills/Plugins Only)
+
+Determine whether this project is itself an agent skill or plugin: look for a `SKILL.md` file (at the project root or in a `skills/*/` subdirectory) or a `.codex-plugin/plugin.json` manifest.
+
+**If this project is not a skill/plugin:** skip this step entirely — not applicable, don't mention it in the summary.
+
+**If it is a skill/plugin:** check whether it already has a working help mechanism — a `--help` flag (skills) or `:help` command (plugins) documented in the core manifest file(s), backed by a `help.md` file alongside each one.
+
+- **If present for every manifest copy:** report "Help mechanism found, skipping."
+- **If missing or incomplete:** warn the user: "No `--help`/`:help` mechanism found for this skill/plugin. Consider running `/make-readme` to add one." Do not create it yourself — creating the mechanism is `/make-readme`'s job, not this skill's.
+
+### Step 5: Check .gitignore
 
 Check if `.gitignore` exists.
 
@@ -60,7 +71,7 @@ Check if `.gitignore` exists.
 
 **If present:** Report ".gitignore found." Continue.
 
-### Step 5: Ensure GitHub Remote
+### Step 6: Ensure GitHub Remote
 
 Check if a remote named `origin` exists and points to a GitHub URL.
 
@@ -72,7 +83,7 @@ Check if a remote named `origin` exists and points to a GitHub URL.
 
 **If remote exists:** Report the remote URL. Ensure local branch is pushed and up to date. Push if behind.
 
-### Step 6: Apply Branch Protection
+### Step 7: Apply Branch Protection
 
 Apply branch protection rules to the default branch using the GitHub API:
 
@@ -110,7 +121,7 @@ Report the settings applied:
 - Branch deletion blocked
 - Admin bypass enabled (repo owner can still push directly)
 
-### Step 7: Create GitHub Release
+### Step 8: Create GitHub Release
 
 Ask the user for a version tag. Suggest `v1.0.0` if this is the first release (no existing tags), or suggest the next patch/minor/major version based on the latest existing tag.
 
@@ -122,9 +133,9 @@ gh release create <tag> --generate-notes --latest
 
 Report the release URL.
 
-### Step 8: Summary
+### Step 9: Summary
 
-Present a summary table of everything that was done:
+Present a summary table of everything that was done. Include the Help mechanism row only if Step 4 applied (i.e. this project is a skill/plugin):
 
 ```
 ## Release Summary
@@ -134,6 +145,7 @@ Present a summary table of everything that was done:
 | Git repo | Confirmed (branch: main) |
 | LICENSE | Created (MIT) / Already existed |
 | README.md | Found / Warning: missing |
+| Help mechanism | Found / Warning: missing (run /make-readme) |
 | .gitignore | Found / Warning: missing |
 | GitHub remote | Created: <url> / Existing: <url> |
 | Branch protection | Applied (PRs required, force push blocked) |
