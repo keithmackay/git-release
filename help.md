@@ -6,7 +6,10 @@ WHAT IT DOES
   .gitignore exist, checks skill/plugin projects for a --help/:help
   mechanism (warns and defers to /make-readme rather than creating one),
   creates a GitHub remote if needed, applies branch protection requiring
-  pull requests, and cuts a tagged GitHub release. Each step checks
+  pull requests, bumps the "version" field in every plugin manifest
+  (.claude-plugin/plugin.json, .codex-plugin/plugin.json,
+  gemini-extension.json, including skills/<name>/ copies) to match the
+  release tag, and cuts a tagged GitHub release. Each step checks
   current state first and reports "already exists, skipping" rather
   than clobbering existing files or config.
 

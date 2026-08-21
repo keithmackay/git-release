@@ -121,9 +121,13 @@ Report the settings applied:
 - Branch deletion blocked
 - Admin bypass enabled (repo owner can still push directly)
 
-### Step 8: Create GitHub Release
+### Step 8: Bump Manifest Versions and Create GitHub Release
 
 Ask the user for a version tag. Suggest `v1.0.0` if this is the first release (no existing tags), or suggest the next patch/minor/major version based on the latest existing tag.
+
+**If this project is itself a skill or plugin** (per Step 4's detection): before tagging, find every manifest file that declares a `"version"` field — `.claude-plugin/plugin.json`, `.codex-plugin/plugin.json`, `gemini-extension.json` — including any copies under `skills/<name>/` used for cross-platform packaging. Update each one's `version` field to match the new tag with the leading `v` stripped (e.g. tag `v1.2.0` → `"version": "1.2.0"`). Stage and commit these changes with the message "Bump version to <version>" before creating the tag, so the tagged commit's manifests already reflect the version being released — this is what keeps a plugin's declared version from drifting out of sync with its actual release, a real bug this step exists to prevent.
+
+**If this project is not a skill/plugin:** skip the manifest bump — not applicable, don't mention it in the summary.
 
 Create the release:
 
@@ -131,11 +135,11 @@ Create the release:
 gh release create <tag> --generate-notes --latest
 ```
 
-Report the release URL.
+Report the release URL and which manifest files were bumped (if any).
 
 ### Step 9: Summary
 
-Present a summary table of everything that was done. Include the Help mechanism row only if Step 4 applied (i.e. this project is a skill/plugin):
+Present a summary table of everything that was done. Include the Help mechanism and Manifest version(s) rows only if Step 4 / Step 8's skill-or-plugin check applied (i.e. this project is a skill/plugin):
 
 ```
 ## Release Summary
@@ -149,6 +153,7 @@ Present a summary table of everything that was done. Include the Help mechanism 
 | .gitignore | Found / Warning: missing |
 | GitHub remote | Created: <url> / Existing: <url> |
 | Branch protection | Applied (PRs required, force push blocked) |
+| Manifest version(s) | Bumped to <version> in <N> file(s) |
 | Release | Created: <tag> — <url> |
 ```
 
