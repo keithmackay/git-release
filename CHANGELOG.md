@@ -1,0 +1,25 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/).
+
+## [Unreleased]
+
+- Check for a help mechanism on skill/plugin projects, defer creation to /make-readme
+- Bump plugin manifest versions to match release tag (Step 8)
+
+## [1.0.1] - 2026-08-19
+
+- Rename skill to git-release for kebab-case consistency
+- Add --help flag documentation to git-release skill
+- Move --help text into separate help.md files
+- Document the help.md convention in README
+- Add .gitignore for OS files and local sessionstats state
+
+## [1.0.0] - 2026-08-19
+
+- Initial commit: gitrelease skill, README, MIT license
+- Initial commit
+- Port gitrelease skill to Codex and Gemini CLI, document install/compatibility
+
