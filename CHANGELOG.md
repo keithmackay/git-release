@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+- Add Changelog section to README linking CHANGELOG.md
 - Check for a help mechanism on skill/plugin projects, defer creation to /make-readme
 - Bump plugin manifest versions to match release tag (Step 8)
 - Add CHANGELOG.md seeded from commit history
