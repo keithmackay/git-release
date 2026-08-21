@@ -63,7 +63,15 @@ Determine whether this project is itself an agent skill or plugin: look for a `S
 - **If present for every manifest copy:** report "Help mechanism found, skipping."
 - **If missing or incomplete:** warn the user: "No `--help`/`:help` mechanism found for this skill/plugin. Consider running `/make-readme` to add one." Do not create it yourself — creating the mechanism is `/make-readme`'s job, not this skill's.
 
-### Step 5: Check .gitignore
+### Step 5: Check CHANGELOG.md
+
+Check if `CHANGELOG.md` exists.
+
+**If missing:** Warn the user: "No CHANGELOG.md found. Consider running /make-readme to add one." Do not create it yourself — creating the file is `/make-readme`'s job, not this skill's.
+
+**If present:** Report "CHANGELOG.md found." Continue.
+
+### Step 6: Check .gitignore
 
 Check if `.gitignore` exists.
 
@@ -71,7 +79,7 @@ Check if `.gitignore` exists.
 
 **If present:** Report ".gitignore found." Continue.
 
-### Step 6: Ensure GitHub Remote
+### Step 7: Ensure GitHub Remote
 
 Check if a remote named `origin` exists and points to a GitHub URL.
 
@@ -83,7 +91,7 @@ Check if a remote named `origin` exists and points to a GitHub URL.
 
 **If remote exists:** Report the remote URL. Ensure local branch is pushed and up to date. Push if behind.
 
-### Step 7: Apply Branch Protection
+### Step 8: Apply Branch Protection
 
 Apply branch protection rules to the default branch using the GitHub API:
 
@@ -121,13 +129,19 @@ Report the settings applied:
 - Branch deletion blocked
 - Admin bypass enabled (repo owner can still push directly)
 
-### Step 8: Bump Manifest Versions and Create GitHub Release
+### Step 9: Bump Manifest Versions, Finalize CHANGELOG, and Create GitHub Release
 
 Ask the user for a version tag. Suggest `v1.0.0` if this is the first release (no existing tags), or suggest the next patch/minor/major version based on the latest existing tag.
 
-**If this project is itself a skill or plugin** (per Step 4's detection): before tagging, find every manifest file that declares a `"version"` field — `.claude-plugin/plugin.json`, `.codex-plugin/plugin.json`, `gemini-extension.json` — including any copies under `skills/<name>/` used for cross-platform packaging. Update each one's `version` field to match the new tag with the leading `v` stripped (e.g. tag `v1.2.0` → `"version": "1.2.0"`). Stage and commit these changes with the message "Bump version to <version>" before creating the tag, so the tagged commit's manifests already reflect the version being released — this is what keeps a plugin's declared version from drifting out of sync with its actual release, a real bug this step exists to prevent.
+**If this project is itself a skill or plugin** (per Step 4's detection): before tagging, find every manifest file that declares a `"version"` field — `.claude-plugin/plugin.json`, `.codex-plugin/plugin.json`, `gemini-extension.json` — including any copies under `skills/<name>/` used for cross-platform packaging. Update each one's `version` field to match the new tag with the leading `v` stripped (e.g. tag `v1.2.0` → `"version": "1.2.0"`). This is what keeps a plugin's declared version from drifting out of sync with its actual release, a real bug this step exists to prevent.
 
 **If this project is not a skill/plugin:** skip the manifest bump — not applicable, don't mention it in the summary.
+
+**If `CHANGELOG.md` exists** (per Step 5): finalize it for this release — this is a mechanical rename, not content generation. Rename the `## [Unreleased]` heading to `## [<version>] - <YYYY-MM-DD>` (version without the leading `v`, date = today), then insert a fresh, empty `## [Unreleased]` heading above it. Do not invent, summarize, or generate changelog entries yourself — whatever prose already sits under `Unreleased` (written during development) becomes that version's entry verbatim, unedited. If `Unreleased` is empty or missing entirely, still perform the rename/date-stamp so the file stays well-formed, but do not fabricate content to fill it.
+
+**If `CHANGELOG.md` is missing:** skip this — not applicable.
+
+Stage and commit the manifest bump and CHANGELOG finalization together with the message "Bump version to <version>" before creating the tag, so the tagged commit already reflects the version being released.
 
 Create the release:
 
@@ -135,11 +149,11 @@ Create the release:
 gh release create <tag> --generate-notes --latest
 ```
 
-Report the release URL and which manifest files were bumped (if any).
+Report the release URL, which manifest files were bumped (if any), and whether CHANGELOG.md was finalized.
 
-### Step 9: Summary
+### Step 10: Summary
 
-Present a summary table of everything that was done. Include the Help mechanism and Manifest version(s) rows only if Step 4 / Step 8's skill-or-plugin check applied (i.e. this project is a skill/plugin):
+Present a summary table of everything that was done. Include the Help mechanism and Manifest version(s) rows only if Step 4 / Step 9's skill-or-plugin check applied (i.e. this project is a skill/plugin); include the CHANGELOG.md row only if Step 5 found the file present:
 
 ```
 ## Release Summary
@@ -150,6 +164,7 @@ Present a summary table of everything that was done. Include the Help mechanism 
 | LICENSE | Created (MIT) / Already existed |
 | README.md | Found / Warning: missing |
 | Help mechanism | Found / Warning: missing (run /make-readme) |
+| CHANGELOG.md | Finalized: [Unreleased] → [<version>] / Warning: missing (run /make-readme) |
 | .gitignore | Found / Warning: missing |
 | GitHub remote | Created: <url> / Existing: <url> |
 | Branch protection | Applied (PRs required, force push blocked) |
