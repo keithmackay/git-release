@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 - Check for a help mechanism on skill/plugin projects, defer creation to /make-readme
 - Bump plugin manifest versions to match release tag (Step 8)
+- Add CHANGELOG.md seeded from commit history
+- Add CHANGELOG.md check and release-time finalization (Steps 5, 9-10)
 
 ## [1.0.1] - 2026-08-19
 
