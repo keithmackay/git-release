@@ -151,9 +151,23 @@ gh release create <tag> --generate-notes --latest
 
 Report the release URL, which manifest files were bumped (if any), and whether CHANGELOG.md was finalized.
 
-### Step 10: Summary
+### Step 10: Sync Marketplace Listing (Optional)
 
-Present a summary table of everything that was done. Include the Help mechanism and Manifest version(s) rows only if Step 4 / Step 9's skill-or-plugin check applied (i.e. this project is a skill/plugin); include the CHANGELOG.md row only if Step 5 found the file present:
+**If this project is not itself a skill or plugin** (per Step 4's detection): skip this step entirely — not applicable, don't mention it in the summary.
+
+**If it is a skill or plugin:** determine this project's GitHub `owner/repo` from `git remote get-url origin`. Search sibling project directories for a locally-checked-out marketplace that lists this plugin — check each `~/Projects/*/.claude-plugin/marketplace.json` for a `plugins[]` entry whose `source.repo` matches this project's `owner/repo`.
+
+**If no matching marketplace is found:** skip silently — most projects aren't listed in a marketplace, this isn't a warning-worthy gap.
+
+**If a match is found:** ask the user: "Found this project listed in `<marketplace-dir>` as plugin `<name>`. Update its description to `<version>` in the marketplace listing?"
+- If yes: read that entry's `description` field. If it already starts with a version prefix matching `^v\d+\.\d+\.\d+ — `, replace the prefix with the new version; otherwise prepend `<version> — ` to the existing description (preserve the rest of the text unchanged either way). Write the updated `marketplace.json`, then commit ("Bump <plugin-name> to <version> in marketplace listing") and push it — using that marketplace repo's own push method (plain `git push`, or the `gh-push` helper / manual GraphQL fallback if the marketplace repo's remote is under an account known to need it, matching whatever this project itself required in Step 7).
+- If no: skip, not applicable.
+
+Report which marketplace (if any) was updated, and to what version.
+
+### Step 11: Summary
+
+Present a summary table of everything that was done. Include the Help mechanism and Manifest version(s) rows only if Step 4 / Step 9's skill-or-plugin check applied (i.e. this project is a skill/plugin); include the CHANGELOG.md row only if Step 5 found the file present; include the Marketplace listing row only if Step 10 found a match:
 
 ```
 ## Release Summary
@@ -169,6 +183,7 @@ Present a summary table of everything that was done. Include the Help mechanism 
 | GitHub remote | Created: <url> / Existing: <url> |
 | Branch protection | Applied (PRs required, force push blocked) |
 | Manifest version(s) | Bumped to <version> in <N> file(s) |
+| Marketplace listing | Updated <marketplace>/marketplace.json to <version> / Not found |
 | Release | Created: <tag> — <url> |
 ```
 

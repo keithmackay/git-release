@@ -1,7 +1,7 @@
 git-release — prepare a local git project for public release on GitHub
 
 WHAT IT DOES
-  Runs an idempotent, 10-step release checklist against the current
+  Runs an idempotent, 11-step release checklist against the current
   directory: adds an MIT license if missing, verifies README.md,
   CHANGELOG.md, and .gitignore exist, checks skill/plugin projects for
   a --help/:help mechanism (warns and defers to /make-readme rather
@@ -12,9 +12,11 @@ WHAT IT DOES
   skills/<name>/ copies) to match the release tag, finalizes
   CHANGELOG.md by renaming its "Unreleased" section to the new version
   and date (never inventing changelog content, only renaming/stamping
-  what's already written there), and cuts a tagged GitHub release.
-  Each step checks current state first and reports "already exists,
-  skipping" rather than clobbering existing files or config.
+  what's already written there), offers to bump this plugin's version
+  in any locally-checked-out marketplace.json that lists it, and cuts
+  a tagged GitHub release. Each step checks current state first and
+  reports "already exists, skipping" rather than clobbering existing
+  files or config.
 
 WHAT IT NEEDS
   - The current directory must be a git repository
