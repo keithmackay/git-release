@@ -63,7 +63,41 @@ Determine whether this project is itself an agent skill or plugin: look for a `S
 - **If present for every manifest copy:** report "Help mechanism found, skipping."
 - **If missing or incomplete:** warn the user: "No `--help`/`:help` mechanism found for this skill/plugin. Consider running `/make-readme` to add one." Do not create it yourself — creating the mechanism is `/make-readme`'s job, not this skill's.
 
-### Step 5: Check CHANGELOG.md
+### Step 5: Check/Add `--version` Support (Skills/Plugins Only)
+
+**If this project is not a skill/plugin** (per Step 4's detection): skip this step entirely — not applicable, don't mention it in the summary.
+
+**If it is a skill/plugin:** check whether it already has a `--version` flag (skills) or `:version` command (plugins) documented in the core manifest file(s) (and any `skills/<name>/` copies used for cross-platform packaging).
+
+- **If present for every manifest copy:** report "Version flag found, skipping."
+- **If missing or incomplete:** add it now — unlike the help mechanism and CHANGELOG (which are `/make-readme`'s job), this skill adds `--version`/`:version` support itself, since it's directly tied to the version-management this skill already owns.
+
+**For a skill** (has `SKILL.md`): add a `## Flags` entry (or extend the existing one) to every `SKILL.md` copy — root, `skills/<name>/`, `antigravity/` if present — with this exact procedure:
+
+```
+### `--version`
+
+If the user invokes this skill with a `--version` flag (e.g. `/<skill-name> --version`), do not run the workflow. Instead:
+
+1. Read the installed version from this skill's own manifest: `.claude-plugin/plugin.json` if present, else `.codex-plugin/plugin.json`, else `gemini-extension.json` — whichever exists for this platform install. If none exist (a bare Claude Code skill with only SKILL.md), read the topmost version heading in `CHANGELOG.md` instead.
+2. Print: `<skill-name> v<installed-version>`
+3. Best-effort update check — determine this skill's GitHub source repo:
+   a. If `.git` exists here and `git remote get-url origin` resolves to a `github.com` URL, use that `owner/repo`.
+   b. Otherwise, search this skill's own `README.md` for the first `https://github.com/<owner>/<repo>` URL and use that.
+   c. If neither yields a repo, or the `gh` CLI isn't installed/authenticated: stop here. Print nothing further — no status line, no error.
+4. If a repo was found: run `gh api repos/<owner>/<repo>/releases/latest -q .tag_name` (strip a leading `v`). Compare to the installed version:
+   - Equal → append: `Status: up to date`
+   - Installed is older → append: `Status: newer version available (v<latest>). To update: if you installed this via a Claude Code marketplace, run /plugin marketplace update <marketplace-name> then reinstall; otherwise, git pull in your install directory if it's a git checkout, or re-copy from https://github.com/<owner>/<repo> per this README's Installation section.`
+   - Installed is newer → append: `Status: ahead of latest release (development checkout)`
+   - If the API call fails for any reason (network, auth, rate limit, malformed tag): print nothing further — no status line, no error shown to the user.
+5. Stop — do not proceed to run the skill's actual workflow.
+```
+
+**For a plugin** (commands-based, no `SKILL.md`): add a `commands/version.md` file (and its mirror under any build/packaging directory, e.g. `plugin/commands/`) implementing the same 5-step procedure, invoked as `/<plugin-name>:version`.
+
+Present the added flag/command to the user before writing, mirroring how the help mechanism is added.
+
+### Step 6: Check CHANGELOG.md
 
 Check if `CHANGELOG.md` exists.
 
@@ -71,7 +105,7 @@ Check if `CHANGELOG.md` exists.
 
 **If present:** Report "CHANGELOG.md found." Continue.
 
-### Step 6: Check .gitignore
+### Step 7: Check .gitignore
 
 Check if `.gitignore` exists.
 
@@ -79,7 +113,7 @@ Check if `.gitignore` exists.
 
 **If present:** Report ".gitignore found." Continue.
 
-### Step 7: Ensure GitHub Remote
+### Step 8: Ensure GitHub Remote
 
 Check if a remote named `origin` exists and points to a GitHub URL.
 
@@ -91,7 +125,7 @@ Check if a remote named `origin` exists and points to a GitHub URL.
 
 **If remote exists:** Report the remote URL. Ensure local branch is pushed and up to date. Push if behind.
 
-### Step 8: Apply Branch Protection
+### Step 9: Apply Branch Protection
 
 Apply branch protection rules to the default branch using the GitHub API:
 
@@ -129,7 +163,7 @@ Report the settings applied:
 - Branch deletion blocked
 - Admin bypass enabled (repo owner can still push directly)
 
-### Step 9: Bump Manifest Versions, Finalize CHANGELOG, and Create GitHub Release
+### Step 10: Bump Manifest Versions, Finalize CHANGELOG, and Create GitHub Release
 
 Ask the user for a version tag. Suggest `v1.0.0` if this is the first release (no existing tags), or suggest the next patch/minor/major version based on the latest existing tag.
 
@@ -137,7 +171,7 @@ Ask the user for a version tag. Suggest `v1.0.0` if this is the first release (n
 
 **If this project is not a skill/plugin:** skip the manifest bump — not applicable, don't mention it in the summary.
 
-**If `CHANGELOG.md` exists** (per Step 5): finalize it for this release — this is a mechanical rename, not content generation. Rename the `## [Unreleased]` heading to `## [<version>] - <YYYY-MM-DD>` (version without the leading `v`, date = today), then insert a fresh, empty `## [Unreleased]` heading above it. Do not invent, summarize, or generate changelog entries yourself — whatever prose already sits under `Unreleased` (written during development) becomes that version's entry verbatim, unedited. If `Unreleased` is empty or missing entirely, still perform the rename/date-stamp so the file stays well-formed, but do not fabricate content to fill it.
+**If `CHANGELOG.md` exists** (per Step 6): finalize it for this release — this is a mechanical rename, not content generation. Rename the `## [Unreleased]` heading to `## [<version>] - <YYYY-MM-DD>` (version without the leading `v`, date = today), then insert a fresh, empty `## [Unreleased]` heading above it. Do not invent, summarize, or generate changelog entries yourself — whatever prose already sits under `Unreleased` (written during development) becomes that version's entry verbatim, unedited. If `Unreleased` is empty or missing entirely, still perform the rename/date-stamp so the file stays well-formed, but do not fabricate content to fill it.
 
 **If `CHANGELOG.md` is missing:** skip this — not applicable.
 
@@ -151,7 +185,7 @@ gh release create <tag> --generate-notes --latest
 
 Report the release URL, which manifest files were bumped (if any), and whether CHANGELOG.md was finalized.
 
-### Step 10: Sync Marketplace Listing (Optional)
+### Step 11: Sync Marketplace Listing (Optional)
 
 **If this project is not itself a skill or plugin** (per Step 4's detection): skip this step entirely — not applicable, don't mention it in the summary.
 
@@ -165,9 +199,9 @@ Report the release URL, which manifest files were bumped (if any), and whether C
 
 Report which marketplace (if any) was updated, and to what version.
 
-### Step 11: Summary
+### Step 12: Summary
 
-Present a summary table of everything that was done. Include the Help mechanism and Manifest version(s) rows only if Step 4 / Step 9's skill-or-plugin check applied (i.e. this project is a skill/plugin); include the CHANGELOG.md row only if Step 5 found the file present; include the Marketplace listing row only if Step 10 found a match:
+Present a summary table of everything that was done. Include the Help mechanism, Version flag, and Manifest version(s) rows only if Step 4 / Step 10's skill-or-plugin check applied (i.e. this project is a skill/plugin); include the CHANGELOG.md row only if Step 6 found the file present; include the Marketplace listing row only if Step 11 found a match:
 
 ```
 ## Release Summary
@@ -178,6 +212,7 @@ Present a summary table of everything that was done. Include the Help mechanism 
 | LICENSE | Created (MIT) / Already existed |
 | README.md | Found / Warning: missing |
 | Help mechanism | Found / Warning: missing (run /make-readme) |
+| Version flag | Found / Added |
 | CHANGELOG.md | Finalized: [Unreleased] → [<version>] / Warning: missing (run /make-readme) |
 | .gitignore | Found / Warning: missing |
 | GitHub remote | Created: <url> / Existing: <url> |

@@ -1,13 +1,16 @@
 git-release — prepare a local git project for public release on GitHub
 
 WHAT IT DOES
-  Runs an idempotent, 11-step release checklist against the current
-  directory: adds an MIT license if missing, verifies README.md,
-  CHANGELOG.md, and .gitignore exist, checks skill/plugin projects for
-  a --help/:help mechanism (warns and defers to /make-readme rather
-  than creating one), creates a GitHub remote if needed, applies branch
-  protection requiring pull requests, bumps the "version" field in
-  every plugin manifest (.claude-plugin/plugin.json,
+  Runs an idempotent, 12-step release checklist against the current
+  directory: adds an MIT license if missing, verifies README.md exists,
+  checks skill/plugin projects for a --help/:help mechanism (warns and
+  defers to /make-readme rather than creating one), adds a --version
+  flag/:version command to skill/plugin projects that lack one (this
+  step creates it directly, reporting installed version and -- best
+  effort -- whether a newer GitHub release is available), verifies
+  CHANGELOG.md and .gitignore exist, creates a GitHub remote if needed,
+  applies branch protection requiring pull requests, bumps the
+  "version" field in every plugin manifest (.claude-plugin/plugin.json,
   .codex-plugin/plugin.json, gemini-extension.json, including
   skills/<name>/ copies) to match the release tag, finalizes
   CHANGELOG.md by renaming its "Unreleased" section to the new version

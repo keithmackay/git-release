@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+- Add Step 5: add a --version flag/:version command to skill/plugin projects that lack one, reporting installed version and a best-effort GitHub update check
 - Add optional Step 10: offer to bump this plugin's version in any locally-checked-out marketplace.json that lists it
 - Add Changelog section to README linking CHANGELOG.md
 - Check for a help mechanism on skill/plugin projects, defer creation to /make-readme
