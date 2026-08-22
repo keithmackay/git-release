@@ -26,6 +26,23 @@ Prepare a local git project for public release on GitHub. Ensures the project ha
 
 If the user invokes this skill with a `--help` flag (e.g. `/git-release --help`), do not run the workflow. Instead, read and display the contents of `help.md` (in this skill's folder) verbatim, then stop.
 
+### `--version`
+
+If the user invokes this skill with a `--version` flag (e.g. `/git-release --version`), do not run the workflow. Instead:
+
+1. Read the installed version from this skill's own manifest: `.claude-plugin/plugin.json` if present, else `.codex-plugin/plugin.json`, else `gemini-extension.json` — whichever exists for this platform install. If none exist (a bare Claude Code skill with only SKILL.md), read the topmost version heading in `CHANGELOG.md` instead.
+2. Print: `git-release v<installed-version>`
+3. Best-effort update check — determine this skill's GitHub source repo:
+   a. If `.git` exists here and `git remote get-url origin` resolves to a `github.com` URL, use that `owner/repo`.
+   b. Otherwise, search this skill's own `README.md` for the first `https://github.com/<owner>/<repo>` URL and use that.
+   c. If neither yields a repo, or the `gh` CLI isn't installed/authenticated: stop here. Print nothing further — no status line, no error.
+4. If a repo was found: run `gh api repos/<owner>/<repo>/releases/latest -q .tag_name` (strip a leading `v`). Compare to the installed version:
+   - Equal → append: `Status: up to date`
+   - Installed is older → append: `Status: newer version available (v<latest>). To update: if you installed this via a Claude Code marketplace, run /plugin marketplace update <marketplace-name> then reinstall; otherwise, git pull in your install directory if it's a git checkout, or re-copy from https://github.com/<owner>/<repo> per this README's Installation section.`
+   - Installed is newer → append: `Status: ahead of latest release (development checkout)`
+   - If the API call fails for any reason (network, auth, rate limit, malformed tag): print nothing further — no status line, no error shown to the user.
+5. Stop — do not proceed to run the skill's actual workflow.
+
 ## Workflow
 
 Run each step in order. Report what was done or skipped at each step.
@@ -171,7 +188,10 @@ Ask the user for a version tag. Suggest `v1.0.0` if this is the first release (n
 
 **If this project is not a skill/plugin:** skip the manifest bump — not applicable, don't mention it in the summary.
 
-**If `CHANGELOG.md` exists** (per Step 6): finalize it for this release — this is a mechanical rename, not content generation. Rename the `## [Unreleased]` heading to `## [<version>] - <YYYY-MM-DD>` (version without the leading `v`, date = today), then insert a fresh, empty `## [Unreleased]` heading above it. Do not invent, summarize, or generate changelog entries yourself — whatever prose already sits under `Unreleased` (written during development) becomes that version's entry verbatim, unedited. If `Unreleased` is empty or missing entirely, still perform the rename/date-stamp so the file stays well-formed, but do not fabricate content to fill it.
+**If `CHANGELOG.md` exists** (per Step 6): before finalizing, check whether `## [Unreleased]` has any content under it (bullets, or non-empty `### Added`/`### Changed`/etc. subsections).
+
+- **If `Unreleased` is empty:** stop and ask the user: "CHANGELOG.md's Unreleased section is empty — this release would ship with no changelog entry. Add an entry now, or proceed anyway?" Wait for their answer before continuing. Do not write a placeholder entry yourself and do not silently proceed — this is a deliberate gate, not a step to route around.
+- **If `Unreleased` has content, or the user confirmed proceeding anyway despite it being empty:** finalize it for this release — this is a mechanical rename, not content generation. Rename the `## [Unreleased]` heading to `## [<version>] - <YYYY-MM-DD>` (version without the leading `v`, date = today), then insert a fresh, empty `## [Unreleased]` heading above it. Do not invent, summarize, or generate changelog entries yourself — whatever prose already sits under `Unreleased` becomes that version's entry verbatim, unedited.
 
 **If `CHANGELOG.md` is missing:** skip this — not applicable.
 
@@ -213,7 +233,7 @@ Present a summary table of everything that was done. Include the Help mechanism,
 | README.md | Found / Warning: missing |
 | Help mechanism | Found / Warning: missing (run /make-readme) |
 | Version flag | Found / Added |
-| CHANGELOG.md | Finalized: [Unreleased] → [<version>] / Warning: missing (run /make-readme) |
+| CHANGELOG.md | Finalized: [Unreleased] → [<version>] / Empty, confirmed by user / Warning: missing (run /make-readme) |
 | .gitignore | Found / Warning: missing |
 | GitHub remote | Created: <url> / Existing: <url> |
 | Branch protection | Applied (PRs required, force push blocked) |

@@ -15,11 +15,12 @@ WHAT IT DOES
   skills/<name>/ copies) to match the release tag, finalizes
   CHANGELOG.md by renaming its "Unreleased" section to the new version
   and date (never inventing changelog content, only renaming/stamping
-  what's already written there), offers to bump this plugin's version
-  in any locally-checked-out marketplace.json that lists it, and cuts
-  a tagged GitHub release. Each step checks current state first and
-  reports "already exists, skipping" rather than clobbering existing
-  files or config.
+  what's already written there -- and refusing to proceed silently if
+  Unreleased is empty, asking for confirmation instead), offers to
+  bump this plugin's version in any locally-checked-out marketplace.json
+  that lists it, and cuts a tagged GitHub release. Each step checks
+  current state first and reports "already exists, skipping" rather
+  than clobbering existing files or config.
 
 WHAT IT NEEDS
   - The current directory must be a git repository
@@ -29,6 +30,8 @@ WHAT IT NEEDS
 USAGE
   /git-release              Run the full release workflow
   /git-release --help       Show this message and exit
+  /git-release --version    Show installed version and check for updates
 
 FLAGS
-  --help    Show this help message without making any changes
+  --help       Show this help message without making any changes
+  --version    Show the installed version and check for a newer release

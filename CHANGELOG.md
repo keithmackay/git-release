@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+- Add its own --version flag (Flags section), matching what Step 5 adds to other skills/plugins
+- Gate Step 10's CHANGELOG finalization: refuse to proceed silently if Unreleased is empty, ask the user to confirm instead
 - Add Step 5: add a --version flag/:version command to skill/plugin projects that lack one, reporting installed version and a best-effort GitHub update check
 - Add optional Step 10: offer to bump this plugin's version in any locally-checked-out marketplace.json that lists it
 - Add Changelog section to README linking CHANGELOG.md
