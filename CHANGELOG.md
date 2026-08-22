@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+- Add `--dry-run` flag: preview the full release workflow (or just `--marketplace`'s sync) and report what would happen at every mutating step, without creating/modifying/committing/pushing/tagging or calling any mutating GitHub API
 - Document mackayi marketplace installation in README
 - Fix manifest version drift: .codex-plugin/plugin.json and gemini-extension.json said 1.0.0 despite the v1.0.1 release tag
 - `--marketplace` now also adds/updates a "from the marketplace" section at the top of the project's own README.md Installation section, with the marketplace's registration and install commands

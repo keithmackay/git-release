@@ -31,11 +31,22 @@ USAGE
   /git-release                Run the full release workflow
   /git-release --help         Show this message and exit
   /git-release --version      Show installed version and check for updates
+  /git-release --dry-run      Preview the release workflow, no changes made
   /git-release --marketplace  Sync this skill/plugin's listing in a marketplace.json
 
 FLAGS
   --help          Show this help message without making any changes
   --version       Show the installed version and check for a newer release
+  --dry-run       Run the full checklist and report what WOULD happen at
+                  every mutating step (LICENSE creation, --version
+                  addition, remote/branch-protection setup, manifest
+                  bump, CHANGELOG finalization, release creation,
+                  marketplace sync) without creating, modifying,
+                  committing, pushing, tagging, or calling any mutating
+                  GitHub API. Combine with --marketplace to preview just
+                  that sync. Read-only checks (README, help mechanism,
+                  CHANGELOG/.gitignore presence) still run for real,
+                  since there's nothing to hold back.
   --marketplace   For skill/plugin projects only: add or update this
                   project's entry in a marketplace.json (asks for its
                   location, remembering it for next time), prefixes its

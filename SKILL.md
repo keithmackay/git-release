@@ -43,6 +43,21 @@ If the user invokes this skill with a `--version` flag (e.g. `/git-release --ver
    - If the API call fails for any reason (network, auth, rate limit, malformed tag): print nothing further — no status line, no error shown to the user.
 5. Stop — do not proceed to run the skill's actual workflow.
 
+### `--dry-run`
+
+If the user invokes this skill with a `--dry-run` flag (e.g. `/git-release --dry-run`), run through the full Workflow below, but treat every step that would create, modify, commit, push, tag, or call a mutating GitHub API as report-only: state what it *would* do, then move on without doing it. Steps that are already pure checks (1, 3, 4, 6, 7) run exactly as normal — there's nothing to hold back. Combine with `--marketplace` (i.e. `--marketplace --dry-run`) to preview that flag's sync instead of the full release workflow, under the same rule.
+
+Concretely, in dry-run mode:
+
+- **Step 2 (LICENSE):** if missing, report "Would create LICENSE (MIT)" instead of creating/committing it.
+- **Step 5 (`--version` support):** if missing, report which files would receive the flag/command (e.g. "Would add `--version` to SKILL.md, skills/<name>/SKILL.md") instead of writing them.
+- **Step 8 (GitHub remote):** if no remote, report "Would create public GitHub repo `<repo-name>`" instead of running `gh repo create`. If a remote exists and local is behind, report "Would push <N> commit(s) to origin" instead of pushing.
+- **Step 9 (branch protection):** report "Would apply branch protection: PRs required (1 approval), stale reviews dismissed, force push blocked, branch deletion blocked" instead of calling the API.
+- **Step 10 (version bump/CHANGELOG/release):** still ask the user for a version tag (this is informational, not mutating), then report "Would bump manifest version to `<version>` in `<N>` file(s)", "Would finalize CHANGELOG.md: [Unreleased] → [<version>] - <date>" (or "Unreleased is empty — would prompt before proceeding" if applicable), and "Would create tag `<version>` and GitHub release" — without touching any file, committing, tagging, or calling `gh release create`.
+- **Step 11 / `--marketplace` procedure:** perform the read-only parts (resolving the repo, locating/asking for the marketplace config path, determining current version) normally, but report "Would update `<marketplace-name>`'s marketplace.json entry to `<version>`" / "Would create new entry for `<plugin-name>`", "Would update marketplace README.md entry", "Would update this project's own README.md Installation section" — without writing or pushing to either repo, and without saving a newly-given marketplace path into the config file (ask first: "Save this path for future runs?" — a `--dry-run` shouldn't silently persist state).
+
+End with the same Step 12 summary table, but every row that describes a would-be action is prefixed `Would:` (e.g. `Would: Create (MIT)`), and the table itself is headed with **"## Dry Run — no changes were made"** instead of "## Release Summary".
+
 ### `--marketplace`
 
 If the user invokes this skill with a `--marketplace` flag (e.g. `/git-release --marketplace`), do not run the release workflow. Instead, run the marketplace-sync procedure below and stop.
