@@ -29,6 +29,13 @@ This skill's own `--help` follows the same convention it checks other skills for
 
 ## Installation
 
+### From the mackayi marketplace (recommended)
+
+```
+/plugin marketplace add keithmackay/mackayi
+/plugin install git-release@mackayi
+```
+
 ### Claude Code
 
 ```bash
