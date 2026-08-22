@@ -74,9 +74,22 @@ If the user invokes this skill with a `--marketplace` flag (e.g. `/git-release -
      `[Help](https://github.com/<owner>/<repo>/blob/<default-branch>/help.md) · [Changelog](https://github.com/<owner>/<repo>/blob/<default-branch>/CHANGELOG.md)`
      (omit whichever of the two doesn't exist).
 
-7. **Commit and push.** Stage `marketplace.json` and `README.md` in the marketplace repo, commit with a message like "Sync `<plugin-name>` to `<version>` in marketplace listing", and push using that marketplace repo's own push method (plain `git push`, or the `gh-push` helper / manual GraphQL fallback if its remote is under an account known to need it).
+7. **Commit and push the marketplace repo.** Stage `marketplace.json` and `README.md` there, commit with a message like "Sync `<plugin-name>` to `<version>` in marketplace listing", and push using that marketplace repo's own push method (plain `git push`, or the `gh-push` helper / manual GraphQL fallback if its remote is under an account known to need it).
 
-8. **Report** the marketplace path used (and whether it was newly saved to config or reused), whether the entry was created or updated, the version applied, whether the README was updated, and which of help.md/CHANGELOG.md were linked.
+8. **Update this project's own README.md Installation section.** Determine the marketplace's own name (the top-level `"name"` field in its `marketplace.json`) and its public `owner/repo` (from `git remote get-url origin` inside the marketplace repo). At the very top of this project's `## Installation` section — before any existing per-platform subsections — add or update a subsection pointing at marketplace installation, e.g.:
+
+   ```markdown
+   ### From the <marketplace-name> marketplace (recommended)
+
+   ```
+   /plugin marketplace add <marketplace-owner>/<marketplace-repo>
+   /plugin install <plugin-name>@<marketplace-name>
+   ```
+   ```
+
+   If this subsection already exists (from a prior `--marketplace` run), just update the marketplace name/repo/plugin name in place rather than duplicating it. Stage this README.md change alongside this project's own commits (commit it now with a message like "Document `<marketplace-name>` marketplace installation in README" — this is a change to the project being released, not the marketplace repo, so it does not get pushed as part of step 7).
+
+9. **Report** the marketplace path used (and whether it was newly saved to config or reused), whether the entry was created or updated, the version applied, whether the marketplace's README was updated, which of help.md/CHANGELOG.md were linked, and whether this project's own README.md installation section was updated.
 
 ## Workflow
 
@@ -246,8 +259,8 @@ Report the release URL, which manifest files were bumped (if any), and whether C
 
 **If it is a skill or plugin:** check for an existing entry in this skill's own `.git-release/marketplace-config.json` (see the `--marketplace` flag above) for this project's `owner/repo`.
 
-- **If a saved marketplace path exists:** ask the user: "Sync this release to `<saved-marketplace-path>` (as configured)?" If yes, run the full `--marketplace` procedure (steps 4-8 above — version detection, entry update/create, README sync, commit and push), reusing that saved path without re-asking for a location. If no: skip, not applicable.
-- **If no saved marketplace path exists:** ask the user: "Sync this release to a marketplace listing?" If yes, run the full `--marketplace` procedure from the top (steps 1-8 above), which will ask for and save a marketplace location. If no: skip, not applicable.
+- **If a saved marketplace path exists:** ask the user: "Sync this release to `<saved-marketplace-path>` (as configured)?" If yes, run the full `--marketplace` procedure (steps 4-9 above — version detection, entry update/create, marketplace README sync, commit and push, and this project's own README install-instructions update), reusing that saved path without re-asking for a location. If no: skip, not applicable.
+- **If no saved marketplace path exists:** ask the user: "Sync this release to a marketplace listing?" If yes, run the full `--marketplace` procedure from the top (steps 1-9 above), which will ask for and save a marketplace location. If no: skip, not applicable.
 
 Report which marketplace (if any) was updated, and to what version.
 

@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+- `--marketplace` now also adds/updates a "from the marketplace" section at the top of the project's own README.md Installation section, with the marketplace's registration and install commands
 - Add `--marketplace` flag: interactively locate a marketplace.json (asking, then remembering the path per project in a local config file), add/update this project's listing with a version-prefixed description and its public repo as source, and sync the marketplace's README.md entry — linking to help.md/CHANGELOG.md when present; Step 11 now reuses this same procedure
 - Add its own --version flag (Flags section), matching what Step 5 adds to other skills/plugins
 - Gate Step 10's CHANGELOG finalization: refuse to proceed silently if Unreleased is empty, ask the user to confirm instead

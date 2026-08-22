@@ -42,4 +42,7 @@ FLAGS
                   description with the current version, sets its listed
                   repo to this project's public GitHub remote, and
                   updates the marketplace's README.md entry -- linking
-                  to help.md/CHANGELOG.md if this project has them
+                  to help.md/CHANGELOG.md if this project has them.
+                  Also adds/updates a "from the marketplace" section at
+                  the top of this project's own README.md Installation
+                  section with the marketplace add/install commands
