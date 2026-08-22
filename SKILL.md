@@ -43,6 +43,41 @@ If the user invokes this skill with a `--version` flag (e.g. `/git-release --ver
    - If the API call fails for any reason (network, auth, rate limit, malformed tag): print nothing further — no status line, no error shown to the user.
 5. Stop — do not proceed to run the skill's actual workflow.
 
+### `--marketplace`
+
+If the user invokes this skill with a `--marketplace` flag (e.g. `/git-release --marketplace`), do not run the release workflow. Instead, run the marketplace-sync procedure below and stop.
+
+**Applicability check:** determine whether the current project is itself a skill or plugin, using the same detection as Step 4 (a `SKILL.md` at the project root or in a `skills/*/` subdirectory, or a `.codex-plugin/plugin.json` manifest). If it is not: stop and tell the user "This project isn't a skill or plugin — `--marketplace` only applies to skill/plugin releases."
+
+1. **Resolve the project's public repo.** Run `git remote get-url origin` and normalize it to `owner/repo`. If there's no remote or it isn't a `github.com` URL, stop and tell the user to set up a GitHub remote first (run `/git-release` without flags, which handles this in Step 8).
+
+2. **Locate the config file.** This skill stores its marketplace config in its own installed folder (the same directory as this `SKILL.md` and `help.md`), not the project being released — at `.git-release/marketplace-config.json`. Determine that folder by finding the `SKILL.md` currently being executed on disk (e.g. it sits alongside `help.md` and `CHANGELOG.md` for this skill's own package). Create the `.git-release/` subfolder if it doesn't exist. The file is a JSON object keyed by `owner/repo` of the project being released, valued with the absolute path to that project's chosen `marketplace.json`:
+   ```json
+   { "someowner/some-project": "/Users/you/Projects/some-marketplace/.claude-plugin/marketplace.json" }
+   ```
+
+3. **Ask for the marketplace location.** If the config file has an existing entry for this project's `owner/repo`, use its path as the default when asking. Ask the user: "Where is the marketplace.json for the marketplace you want to list this project in?" (showing the default, if any, so they can just confirm it).
+   - If the given path is a file, use it directly.
+   - If it's a folder, check `<folder>/marketplace.json` and `<folder>/.claude-plugin/marketplace.json` first.
+   - If neither exists, recursively search the folder's subfolders for any file named `marketplace.json`. If exactly one is found, use it. If several are found, list them and ask the user to pick one. If none are found, tell the user and ask again for a location.
+   - Save the resolved **full absolute path** into the config file under this project's `owner/repo` key, preserving all other entries already in the file.
+
+4. **Determine this project's current version.** Use the same version-detection logic as the `--version` flag: read the `version` field from `.claude-plugin/plugin.json` / `.codex-plugin/plugin.json` / `gemini-extension.json` (whichever exists), falling back to the topmost version heading in `CHANGELOG.md` if none of those manifests exist.
+
+5. **Update (or create) the marketplace entry.** Read the target `marketplace.json`. Find the `plugins[]` entry whose `source` repo matches this project's `owner/repo`.
+   - **If found:** take its existing `description`, and update the leading version prefix. If it already starts with a version pattern (`^v?\d+\.\d+\.\d+\s+—\s+`), replace just that prefix; otherwise prepend `<version> — ` to the existing text. Leave the rest of the description, and every other field, untouched.
+   - **If not found:** create a new entry. Pull the `name` and a base description from this project's own manifest (or its `SKILL.md` frontmatter `description` if no manifest exists), prefix the description with `<version> — `, and set the `source` field to reference this project's public repo, matching the field shape already used by sibling entries in that `marketplace.json` (e.g. `{"source": "github", "repo": "owner/repo"}` or whatever convention that file already follows — don't invent a new shape). Ask the user for a `category` if the marketplace's other entries use one and it isn't obvious from context.
+   - Write the updated `marketplace.json` back, preserving formatting and the ordering/content of every other entry.
+
+6. **Update the marketplace project's README.md.** Find `README.md` at the root of the marketplace repo (the directory containing `marketplace.json`, or its parent if `marketplace.json` lives in a `.claude-plugin/` subfolder). Find this project's existing entry in the README (matched by plugin name) and update its description line to match the new version-prefixed description; if no entry exists yet, add one following the same structure/heading level as the README's other listed entries.
+   - If this project has a `help.md` and/or `CHANGELOG.md` at its root, append a line at the end of that project's README entry linking directly to them in the project's public GitHub repo, e.g.:
+     `[Help](https://github.com/<owner>/<repo>/blob/<default-branch>/help.md) · [Changelog](https://github.com/<owner>/<repo>/blob/<default-branch>/CHANGELOG.md)`
+     (omit whichever of the two doesn't exist).
+
+7. **Commit and push.** Stage `marketplace.json` and `README.md` in the marketplace repo, commit with a message like "Sync `<plugin-name>` to `<version>` in marketplace listing", and push using that marketplace repo's own push method (plain `git push`, or the `gh-push` helper / manual GraphQL fallback if its remote is under an account known to need it).
+
+8. **Report** the marketplace path used (and whether it was newly saved to config or reused), whether the entry was created or updated, the version applied, whether the README was updated, and which of help.md/CHANGELOG.md were linked.
+
 ## Workflow
 
 Run each step in order. Report what was done or skipped at each step.
@@ -209,13 +244,10 @@ Report the release URL, which manifest files were bumped (if any), and whether C
 
 **If this project is not itself a skill or plugin** (per Step 4's detection): skip this step entirely — not applicable, don't mention it in the summary.
 
-**If it is a skill or plugin:** determine this project's GitHub `owner/repo` from `git remote get-url origin`. Search sibling project directories for a locally-checked-out marketplace that lists this plugin — check each `~/Projects/*/.claude-plugin/marketplace.json` for a `plugins[]` entry whose `source.repo` matches this project's `owner/repo`.
+**If it is a skill or plugin:** check for an existing entry in this skill's own `.git-release/marketplace-config.json` (see the `--marketplace` flag above) for this project's `owner/repo`.
 
-**If no matching marketplace is found:** skip silently — most projects aren't listed in a marketplace, this isn't a warning-worthy gap.
-
-**If a match is found:** ask the user: "Found this project listed in `<marketplace-dir>` as plugin `<name>`. Update its description to `<version>` in the marketplace listing?"
-- If yes: read that entry's `description` field. If it already starts with a version prefix matching `^v\d+\.\d+\.\d+ — `, replace the prefix with the new version; otherwise prepend `<version> — ` to the existing description (preserve the rest of the text unchanged either way). Write the updated `marketplace.json`, then commit ("Bump <plugin-name> to <version> in marketplace listing") and push it — using that marketplace repo's own push method (plain `git push`, or the `gh-push` helper / manual GraphQL fallback if the marketplace repo's remote is under an account known to need it, matching whatever this project itself required in Step 7).
-- If no: skip, not applicable.
+- **If a saved marketplace path exists:** ask the user: "Sync this release to `<saved-marketplace-path>` (as configured)?" If yes, run the full `--marketplace` procedure (steps 4-8 above — version detection, entry update/create, README sync, commit and push), reusing that saved path without re-asking for a location. If no: skip, not applicable.
+- **If no saved marketplace path exists:** ask the user: "Sync this release to a marketplace listing?" If yes, run the full `--marketplace` procedure from the top (steps 1-8 above), which will ask for and save a marketplace location. If no: skip, not applicable.
 
 Report which marketplace (if any) was updated, and to what version.
 

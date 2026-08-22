@@ -16,11 +16,11 @@ WHAT IT DOES
   CHANGELOG.md by renaming its "Unreleased" section to the new version
   and date (never inventing changelog content, only renaming/stamping
   what's already written there -- and refusing to proceed silently if
-  Unreleased is empty, asking for confirmation instead), offers to
-  bump this plugin's version in any locally-checked-out marketplace.json
-  that lists it, and cuts a tagged GitHub release. Each step checks
-  current state first and reports "already exists, skipping" rather
-  than clobbering existing files or config.
+  Unreleased is empty, asking for confirmation instead), optionally
+  syncs this plugin's listing in a marketplace.json it's registered in
+  (see --marketplace below), and cuts a tagged GitHub release. Each
+  step checks current state first and reports "already exists,
+  skipping" rather than clobbering existing files or config.
 
 WHAT IT NEEDS
   - The current directory must be a git repository
@@ -28,10 +28,18 @@ WHAT IT NEEDS
   - `git config user.name` set, for the LICENSE copyright holder
 
 USAGE
-  /git-release              Run the full release workflow
-  /git-release --help       Show this message and exit
-  /git-release --version    Show installed version and check for updates
+  /git-release                Run the full release workflow
+  /git-release --help         Show this message and exit
+  /git-release --version      Show installed version and check for updates
+  /git-release --marketplace  Sync this skill/plugin's listing in a marketplace.json
 
 FLAGS
-  --help       Show this help message without making any changes
-  --version    Show the installed version and check for a newer release
+  --help          Show this help message without making any changes
+  --version       Show the installed version and check for a newer release
+  --marketplace   For skill/plugin projects only: add or update this
+                  project's entry in a marketplace.json (asks for its
+                  location, remembering it for next time), prefixes its
+                  description with the current version, sets its listed
+                  repo to this project's public GitHub remote, and
+                  updates the marketplace's README.md entry -- linking
+                  to help.md/CHANGELOG.md if this project has them

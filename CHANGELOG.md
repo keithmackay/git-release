@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+- Add `--marketplace` flag: interactively locate a marketplace.json (asking, then remembering the path per project in a local config file), add/update this project's listing with a version-prefixed description and its public repo as source, and sync the marketplace's README.md entry — linking to help.md/CHANGELOG.md when present; Step 11 now reuses this same procedure
 - Add its own --version flag (Flags section), matching what Step 5 adds to other skills/plugins
 - Gate Step 10's CHANGELOG finalization: refuse to proceed silently if Unreleased is empty, ask the user to confirm instead
 - Add Step 5: add a --version flag/:version command to skill/plugin projects that lack one, reporting installed version and a best-effort GitHub update check
