@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+- Step 9's proposed/checked repo description now leads with a type prefix indicating what the project is — e.g. "Claude/Codex/Gemini skill: " when configured for multiple agent platforms, "Claude Code plugin: " for commands-based plugins, or a fitting noun for non-skill/plugin projects — and re-proposes an update if an already-set description is missing or mismatching that prefix
+
 ## [1.1.0] - 2026-09-20
 
 - `--marketplace` now mirrors the project's GitHub repo description into its marketplace.json listing (version-prefixed) instead of preserving a separately drifting description

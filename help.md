@@ -9,9 +9,11 @@ WHAT IT DOES
   step creates it directly, reporting installed version and -- best
   effort -- whether a newer GitHub release is available), verifies
   CHANGELOG.md and .gitignore exist, creates a GitHub remote if needed,
-  ensures the GitHub repo's description field is set (proposing a
-  one-line description you can accept or replace), applies branch
-  protection requiring pull requests, bumps the
+  ensures the GitHub repo's description field is set and leads with
+  what the project is (e.g. "Claude/Codex/Gemini skill: ", "Claude
+  Code plugin: ", or another fitting noun), proposing a one-line
+  description you can accept or replace, applies branch protection
+  requiring pull requests, bumps the
   "version" field in every plugin manifest (.claude-plugin/plugin.json,
   .codex-plugin/plugin.json, gemini-extension.json, including
   skills/<name>/ copies) to match the release tag, finalizes

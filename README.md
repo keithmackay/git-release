@@ -21,7 +21,7 @@ Invoke `/git-release` (or say "release this," "make this public," "set up GitHub
 4. For skill/plugin projects, checks for a `--help`/`:help` mechanism backed by `help.md` (warns and defers to `/make-readme` if missing — this skill checks but never creates it)
 5. Checks `.gitignore` exists (warns if missing)
 6. Creates a GitHub remote via `gh repo create --public --source=. --push` if none exists, or confirms the existing one is up to date
-7. Ensures the GitHub repo's `description` field is set — proposes a one-line description (from the project's manifest/README) that you can accept or replace, since this is what surfaces the project's summary on GitHub itself and third-party tools like dev.to's GitHub Connections, and it's also what gets mirrored into any marketplace.json listing for this project
+7. Ensures the GitHub repo's `description` field is set and leads with what the project *is* — e.g. `"Claude/Codex/Gemini skill: "`, `"Claude Code plugin: "`, or another fitting noun for non-skill/plugin projects — proposing a one-line description that you can accept or replace, since this is what surfaces the project's summary on GitHub itself and third-party tools like dev.to's GitHub Connections, and it's also what gets mirrored into any marketplace.json listing for this project
 8. Applies branch protection (PR required, 1 approval, stale reviews dismissed, force-push and deletion blocked) via the GitHub API
 9. Creates a tagged GitHub release with `gh release create --generate-notes --latest`
 10. Prints a summary table of what was done or skipped at each step

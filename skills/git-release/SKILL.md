@@ -52,7 +52,7 @@ Concretely, in dry-run mode:
 - **Step 2 (LICENSE):** if missing, report "Would create LICENSE (MIT)" instead of creating/committing it.
 - **Step 5 (`--version` support):** if missing, report which files would receive the flag/command (e.g. "Would add `--version` to SKILL.md, skills/<name>/SKILL.md") instead of writing them.
 - **Step 8 (GitHub remote):** if no remote, report "Would create public GitHub repo `<repo-name>`" instead of running `gh repo create`. If a remote exists and local is behind, report "Would push <N> commit(s) to origin" instead of pushing.
-- **Step 9 (repo description):** if missing, report the proposed one-line description and "Would set repo description to: \"<proposed description>\"" instead of calling the API. If already set, this step is a pure check and runs normally.
+- **Step 9 (repo description):** if missing, empty, or missing/mismatching the correct type prefix, report the proposed one-line description (with its type prefix) and "Would set repo description to: \"<proposed description>\"" instead of calling the API. If already set with the correct prefix, this step is a pure check and runs normally.
 - **Step 10 (branch protection):** report "Would apply branch protection: PRs required (1 approval), stale reviews dismissed, force push blocked, branch deletion blocked" instead of calling the API.
 - **Step 11 (version bump/CHANGELOG/release):** still ask the user for a version tag (this is informational, not mutating), then report "Would bump manifest version to `<version>` in `<N>` file(s)", "Would finalize CHANGELOG.md: [Unreleased] → [<version>] - <date>" (or "Unreleased is empty — would prompt before proceeding" if applicable), and "Would create tag `<version>` and GitHub release" — without touching any file, committing, tagging, or calling `gh release create`.
 - **Step 12 / `--marketplace` procedure:** perform the read-only parts (resolving the repo, locating/asking for the marketplace config path, determining current version) normally, but report "Would update `<marketplace-name>`'s marketplace.json entry to `<version>`" / "Would create new entry for `<plugin-name>`", "Would update marketplace README.md entry", "Would update this project's own README.md Installation section" — without writing or pushing to either repo, and without saving a newly-given marketplace path into the config file (ask first: "Save this path for future runs?" — a `--dry-run` shouldn't silently persist state).
@@ -212,11 +212,18 @@ Check if a remote named `origin` exists and points to a GitHub URL.
 
 GitHub's repo `description` field is what surfaces this project's one-line summary in places like dev.to's GitHub Connections, `gh repo list`, and the repo header — it isn't derived from the README or `SKILL.md` frontmatter, so it has to be set explicitly.
 
+**Determine the type prefix.** Every proposed/checked description leads with what the project *is*, before the actual description — this is what lets someone scanning a repo list or a marketplace tell at a glance whether something is a skill, a plugin, or something else entirely:
+
+- **Skill, single platform:** detect which agent platform(s) this project is built for by checking for a `SKILL.md` (root or `skills/*/`, and/or an `antigravity/` copy) → Claude Code; a `.codex-plugin/plugin.json` manifest → Codex; a `gemini-extension.json` or `GEMINI.md` → Gemini. If exactly one platform is present, the prefix is `"<Platform> skill: "` (e.g. `"Claude skill: "`).
+- **Skill, multiple platforms:** if more than one platform is present, join them with `/` in this fixed order — Claude, Codex, Gemini — e.g. `"Claude/Codex/Gemini skill: "` or `"Claude/Gemini skill: "`. Only include a platform actually present; never list one that isn't.
+- **Plugin:** a commands-based project (a `.claude-plugin/plugin.json` manifest, `commands/*.md` files, no `SKILL.md`) is a Claude Code plugin — prefix `"Claude Code plugin: "`.
+- **Neither:** for any other kind of project (a website, a library, a CLI tool, documentation, an application, etc.), infer the single most fitting noun from its structure/README and use `"<Noun>: "` (e.g. `"Website: "`, `"CLI tool: "`, `"Documentation: "`). Don't force skill/plugin phrasing onto a project that isn't one.
+
 Run `gh repo view <owner>/<repo> --json description -q .description` to check the current value.
 
-**If already set (non-empty):** Report "Repo description already set: \"<description>\", skipping." Do not modify it.
+**If already set and it already starts with the correct type prefix determined above:** Report "Repo description already set: \"<description>\", skipping." Do not modify it.
 
-**If missing or empty:** Propose a one-line description (roughly 10-15 words, no trailing period) derived from, in order of preference: this project's `SKILL.md`/manifest `description` frontmatter field, then the README's opening summary/tagline, then a plain-language summary of what the project does inferred from its code/structure. Show the proposed description to the user and ask them to accept it as-is or supply their own replacement. Once confirmed, set it:
+**If missing, empty, or set but missing/mismatching the correct type prefix:** Propose a one-line description: `"<type prefix><summary>"` where the summary (roughly 10-15 words, no trailing period) is derived from — in order of preference — the existing repo description (stripped of any stale prefix) if one was set, then this project's `SKILL.md`/manifest `description` frontmatter field, then the README's opening summary/tagline, then a plain-language summary of what the project does inferred from its code/structure. Show the full proposed description (prefix + summary) to the user and ask them to accept it as-is or supply their own replacement. Once confirmed, set it:
 
 ```bash
 gh repo edit <owner>/<repo> --description "<description>"
