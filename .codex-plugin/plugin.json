@@ -1,6 +1,6 @@
 {
   "name": "git-release",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "Use when preparing a project for public release on GitHub - adds MIT license, verifies README and .gitignore, creates a GitHub remote if needed, applies branch protection requiring PRs, and creates a tagged GitHub release",
   "skills": "./skills/"
 }
