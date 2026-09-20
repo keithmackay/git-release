@@ -8,12 +8,12 @@ Prepares a local git project for public release on GitHub in one pass: adds an M
 - **Doesn't overreach on docs** — if README.md is missing or a stub, it warns and points at `/make-readme` rather than generating one itself
 - **Sane branch protection defaults** — requires 1 approving PR review, dismisses stale reviews on new pushes, blocks force-push and branch deletion, while leaving admin bypass on so the owner can still push directly
 - **Version-aware releases** — suggests `v1.0.0` for a first release, or the next patch/minor/major based on the latest existing tag
-- **Full summary table** — reports exactly what was done vs. skipped at each of the 9 steps
+- **Full summary table** — reports exactly what was done vs. skipped at each step
 - **Defers, doesn't duplicate** — for both docs and its own help mechanism, this skill only checks and warns; generating either is `/make-readme`'s job
 
 ## Usage
 
-Invoke `/git-release` (or say "release this," "make this public," "set up GitHub for this project") from inside a git repository you want to prepare for public release. Run `/git-release --help` to print what it does, what it needs, and usage without making any changes. Run `/git-release --marketplace` on a skill/plugin project to add or update its listing in a marketplace.json (asks for its location the first time, then remembers it) — version-prefixes the description, points its `source` at this project's public repo, and updates the marketplace's README.md entry, linking to `help.md`/`CHANGELOG.md` if present. It also adds/updates a "from the marketplace" section at the top of this project's own README.md Installation section with the marketplace's registration and install commands. Otherwise the full workflow walks through, in order:
+Invoke `/git-release` (or say "release this," "make this public," "set up GitHub for this project") from inside a git repository you want to prepare for public release. Run `/git-release --help` to print what it does, what it needs, and usage without making any changes. Run `/git-release --marketplace` on a skill/plugin project to add or update its listing in a marketplace.json (asks for its location the first time, then remembers it) — mirrors the project's GitHub repo description (the same one confirmed in the release workflow's repo-description step) into the listing, version-prefixed, points its `source` at this project's public repo, and updates the marketplace's README.md entry, linking to `help.md`/`CHANGELOG.md` if present. It also adds/updates a "from the marketplace" section at the top of this project's own README.md Installation section with the marketplace's registration and install commands. Otherwise the full workflow walks through, in order:
 
 1. Confirms the current directory is a git repo and identifies the default branch
 2. Adds an MIT `LICENSE` if one doesn't exist
@@ -21,9 +21,10 @@ Invoke `/git-release` (or say "release this," "make this public," "set up GitHub
 4. For skill/plugin projects, checks for a `--help`/`:help` mechanism backed by `help.md` (warns and defers to `/make-readme` if missing — this skill checks but never creates it)
 5. Checks `.gitignore` exists (warns if missing)
 6. Creates a GitHub remote via `gh repo create --public --source=. --push` if none exists, or confirms the existing one is up to date
-7. Applies branch protection (PR required, 1 approval, stale reviews dismissed, force-push and deletion blocked) via the GitHub API
-8. Creates a tagged GitHub release with `gh release create --generate-notes --latest`
-9. Prints a summary table of what was done or skipped at each step
+7. Ensures the GitHub repo's `description` field is set — proposes a one-line description (from the project's manifest/README) that you can accept or replace, since this is what surfaces the project's summary on GitHub itself and third-party tools like dev.to's GitHub Connections, and it's also what gets mirrored into any marketplace.json listing for this project
+8. Applies branch protection (PR required, 1 approval, stale reviews dismissed, force-push and deletion blocked) via the GitHub API
+9. Creates a tagged GitHub release with `gh release create --generate-notes --latest`
+10. Prints a summary table of what was done or skipped at each step
 
 This skill's own `--help` follows the same convention it checks other skills for: `SKILL.md` has a short `## Flags` section pointing at a `help.md` file in the same folder, which is read and displayed verbatim. `/make-readme` is what actually generates this pattern for a project that's missing it — see that skill's docs for details.
 

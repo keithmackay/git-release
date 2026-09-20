@@ -1,7 +1,7 @@
 git-release — prepare a local git project for public release on GitHub
 
 WHAT IT DOES
-  Runs an idempotent, 12-step release checklist against the current
+  Runs an idempotent, 13-step release checklist against the current
   directory: adds an MIT license if missing, verifies README.md exists,
   checks skill/plugin projects for a --help/:help mechanism (warns and
   defers to /make-readme rather than creating one), adds a --version
@@ -9,7 +9,9 @@ WHAT IT DOES
   step creates it directly, reporting installed version and -- best
   effort -- whether a newer GitHub release is available), verifies
   CHANGELOG.md and .gitignore exist, creates a GitHub remote if needed,
-  applies branch protection requiring pull requests, bumps the
+  ensures the GitHub repo's description field is set (proposing a
+  one-line description you can accept or replace), applies branch
+  protection requiring pull requests, bumps the
   "version" field in every plugin manifest (.claude-plugin/plugin.json,
   .codex-plugin/plugin.json, gemini-extension.json, including
   skills/<name>/ copies) to match the release tag, finalizes
@@ -49,9 +51,10 @@ FLAGS
                   since there's nothing to hold back.
   --marketplace   For skill/plugin projects only: add or update this
                   project's entry in a marketplace.json (asks for its
-                  location, remembering it for next time), prefixes its
-                  description with the current version, sets its listed
-                  repo to this project's public GitHub remote, and
+                  location, remembering it for next time), mirrors the
+                  project's GitHub repo description into the listing
+                  (version-prefixed), sets its listed repo to this
+                  project's public GitHub remote, and
                   updates the marketplace's README.md entry -- linking
                   to help.md/CHANGELOG.md if this project has them.
                   Also adds/updates a "from the marketplace" section at

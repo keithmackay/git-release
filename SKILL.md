@@ -52,9 +52,10 @@ Concretely, in dry-run mode:
 - **Step 2 (LICENSE):** if missing, report "Would create LICENSE (MIT)" instead of creating/committing it.
 - **Step 5 (`--version` support):** if missing, report which files would receive the flag/command (e.g. "Would add `--version` to SKILL.md, skills/<name>/SKILL.md") instead of writing them.
 - **Step 8 (GitHub remote):** if no remote, report "Would create public GitHub repo `<repo-name>`" instead of running `gh repo create`. If a remote exists and local is behind, report "Would push <N> commit(s) to origin" instead of pushing.
-- **Step 9 (branch protection):** report "Would apply branch protection: PRs required (1 approval), stale reviews dismissed, force push blocked, branch deletion blocked" instead of calling the API.
-- **Step 10 (version bump/CHANGELOG/release):** still ask the user for a version tag (this is informational, not mutating), then report "Would bump manifest version to `<version>` in `<N>` file(s)", "Would finalize CHANGELOG.md: [Unreleased] → [<version>] - <date>" (or "Unreleased is empty — would prompt before proceeding" if applicable), and "Would create tag `<version>` and GitHub release" — without touching any file, committing, tagging, or calling `gh release create`.
-- **Step 11 / `--marketplace` procedure:** perform the read-only parts (resolving the repo, locating/asking for the marketplace config path, determining current version) normally, but report "Would update `<marketplace-name>`'s marketplace.json entry to `<version>`" / "Would create new entry for `<plugin-name>`", "Would update marketplace README.md entry", "Would update this project's own README.md Installation section" — without writing or pushing to either repo, and without saving a newly-given marketplace path into the config file (ask first: "Save this path for future runs?" — a `--dry-run` shouldn't silently persist state).
+- **Step 9 (repo description):** if missing, report the proposed one-line description and "Would set repo description to: \"<proposed description>\"" instead of calling the API. If already set, this step is a pure check and runs normally.
+- **Step 10 (branch protection):** report "Would apply branch protection: PRs required (1 approval), stale reviews dismissed, force push blocked, branch deletion blocked" instead of calling the API.
+- **Step 11 (version bump/CHANGELOG/release):** still ask the user for a version tag (this is informational, not mutating), then report "Would bump manifest version to `<version>` in `<N>` file(s)", "Would finalize CHANGELOG.md: [Unreleased] → [<version>] - <date>" (or "Unreleased is empty — would prompt before proceeding" if applicable), and "Would create tag `<version>` and GitHub release" — without touching any file, committing, tagging, or calling `gh release create`.
+- **Step 12 / `--marketplace` procedure:** perform the read-only parts (resolving the repo, locating/asking for the marketplace config path, determining current version) normally, but report "Would update `<marketplace-name>`'s marketplace.json entry to `<version>`" / "Would create new entry for `<plugin-name>`", "Would update marketplace README.md entry", "Would update this project's own README.md Installation section" — without writing or pushing to either repo, and without saving a newly-given marketplace path into the config file (ask first: "Save this path for future runs?" — a `--dry-run` shouldn't silently persist state).
 
 End with the same Step 12 summary table, but every row that describes a would-be action is prefixed `Would:` (e.g. `Would: Create (MIT)`), and the table itself is headed with **"## Dry Run — no changes were made"** instead of "## Release Summary".
 
@@ -79,19 +80,21 @@ If the user invokes this skill with a `--marketplace` flag (e.g. `/git-release -
 
 4. **Determine this project's current version.** Use the same version-detection logic as the `--version` flag: read the `version` field from `.claude-plugin/plugin.json` / `.codex-plugin/plugin.json` / `gemini-extension.json` (whichever exists), falling back to the topmost version heading in `CHANGELOG.md` if none of those manifests exist.
 
-5. **Update (or create) the marketplace entry.** Read the target `marketplace.json`. Find the `plugins[]` entry whose `source` repo matches this project's `owner/repo`.
-   - **If found:** take its existing `description`, and update the leading version prefix. If it already starts with a version pattern (`^v?\d+\.\d+\.\d+\s+—\s+`), replace just that prefix; otherwise prepend `<version> — ` to the existing text. Leave the rest of the description, and every other field, untouched.
-   - **If not found:** create a new entry. Pull the `name` and a base description from this project's own manifest (or its `SKILL.md` frontmatter `description` if no manifest exists), prefix the description with `<version> — `, and set the `source` field to reference this project's public repo, matching the field shape already used by sibling entries in that `marketplace.json` (e.g. `{"source": "github", "repo": "owner/repo"}` or whatever convention that file already follows — don't invent a new shape). Ask the user for a `category` if the marketplace's other entries use one and it isn't obvious from context.
+5. **Determine the base description.** If this project has a GitHub repo description set (per Step 9 — fetch it live with `gh repo view <owner>/<repo> --json description -q .description` if not already known this run), use it verbatim as the base description. Otherwise fall back to this project's own manifest description (or its `SKILL.md` frontmatter `description` field if no manifest exists).
+
+6. **Update (or create) the marketplace entry.** Read the target `marketplace.json`. Find the `plugins[]` entry whose `source` repo matches this project's `owner/repo`.
+   - **If found:** replace its `description` with `<version> — <base description>` (from step 5), so the marketplace listing always mirrors the GitHub repo's own one-line description rather than drifting from it. Leave every other field untouched.
+   - **If not found:** create a new entry. Use the `name` and the base description from step 5, prefix the description with `<version> — `, and set the `source` field to reference this project's public repo, matching the field shape already used by sibling entries in that `marketplace.json` (e.g. `{"source": "github", "repo": "owner/repo"}` or whatever convention that file already follows — don't invent a new shape). Ask the user for a `category` if the marketplace's other entries use one and it isn't obvious from context.
    - Write the updated `marketplace.json` back, preserving formatting and the ordering/content of every other entry.
 
-6. **Update the marketplace project's README.md.** Find `README.md` at the root of the marketplace repo (the directory containing `marketplace.json`, or its parent if `marketplace.json` lives in a `.claude-plugin/` subfolder). Find this project's existing entry in the README (matched by plugin name) and update its description line to match the new version-prefixed description; if no entry exists yet, add one following the same structure/heading level as the README's other listed entries.
+7. **Update the marketplace project's README.md.** Find `README.md` at the root of the marketplace repo (the directory containing `marketplace.json`, or its parent if `marketplace.json` lives in a `.claude-plugin/` subfolder). Find this project's existing entry in the README (matched by plugin name) and update its description line to match the new version-prefixed description; if no entry exists yet, add one following the same structure/heading level as the README's other listed entries.
    - If this project has a `help.md` and/or `CHANGELOG.md` at its root, append a line at the end of that project's README entry linking directly to them in the project's public GitHub repo, e.g.:
      `[Help](https://github.com/<owner>/<repo>/blob/<default-branch>/help.md) · [Changelog](https://github.com/<owner>/<repo>/blob/<default-branch>/CHANGELOG.md)`
      (omit whichever of the two doesn't exist).
 
-7. **Commit and push the marketplace repo.** Stage `marketplace.json` and `README.md` there, commit with a message like "Sync `<plugin-name>` to `<version>` in marketplace listing", and push using that marketplace repo's own push method (plain `git push`, or the `gh-push` helper / manual GraphQL fallback if its remote is under an account known to need it).
+8. **Commit and push the marketplace repo.** Stage `marketplace.json` and `README.md` there, commit with a message like "Sync `<plugin-name>` to `<version>` in marketplace listing", and push using that marketplace repo's own push method (plain `git push`, or the `gh-push` helper / manual GraphQL fallback if its remote is under an account known to need it).
 
-8. **Update this project's own README.md Installation section.** Determine the marketplace's own name (the top-level `"name"` field in its `marketplace.json`) and its public `owner/repo` (from `git remote get-url origin` inside the marketplace repo). At the very top of this project's `## Installation` section — before any existing per-platform subsections — add or update a subsection pointing at marketplace installation, e.g.:
+9. **Update this project's own README.md Installation section.** Determine the marketplace's own name (the top-level `"name"` field in its `marketplace.json`) and its public `owner/repo` (from `git remote get-url origin` inside the marketplace repo). At the very top of this project's `## Installation` section — before any existing per-platform subsections — add or update a subsection pointing at marketplace installation, e.g.:
 
    ```markdown
    ### From the <marketplace-name> marketplace (recommended)
@@ -102,9 +105,9 @@ If the user invokes this skill with a `--marketplace` flag (e.g. `/git-release -
    ```
    ```
 
-   If this subsection already exists (from a prior `--marketplace` run), just update the marketplace name/repo/plugin name in place rather than duplicating it. Stage this README.md change alongside this project's own commits (commit it now with a message like "Document `<marketplace-name>` marketplace installation in README" — this is a change to the project being released, not the marketplace repo, so it does not get pushed as part of step 7).
+   If this subsection already exists (from a prior `--marketplace` run), just update the marketplace name/repo/plugin name in place rather than duplicating it. Stage this README.md change alongside this project's own commits (commit it now with a message like "Document `<marketplace-name>` marketplace installation in README" — this is a change to the project being released, not the marketplace repo, so it does not get pushed as part of step 8).
 
-9. **Report** the marketplace path used (and whether it was newly saved to config or reused), whether the entry was created or updated, the version applied, whether the marketplace's README was updated, which of help.md/CHANGELOG.md were linked, and whether this project's own README.md installation section was updated.
+10. **Report** the marketplace path used (and whether it was newly saved to config or reused), whether the entry was created or updated, the version applied, whether the marketplace's README was updated, which of help.md/CHANGELOG.md were linked, and whether this project's own README.md installation section was updated.
 
 ## Workflow
 
@@ -205,7 +208,23 @@ Check if a remote named `origin` exists and points to a GitHub URL.
 
 **If remote exists:** Report the remote URL. Ensure local branch is pushed and up to date. Push if behind.
 
-### Step 9: Apply Branch Protection
+### Step 9: Ensure Repo Description
+
+GitHub's repo `description` field is what surfaces this project's one-line summary in places like dev.to's GitHub Connections, `gh repo list`, and the repo header — it isn't derived from the README or `SKILL.md` frontmatter, so it has to be set explicitly.
+
+Run `gh repo view <owner>/<repo> --json description -q .description` to check the current value.
+
+**If already set (non-empty):** Report "Repo description already set: \"<description>\", skipping." Do not modify it.
+
+**If missing or empty:** Propose a one-line description (roughly 10-15 words, no trailing period) derived from, in order of preference: this project's `SKILL.md`/manifest `description` frontmatter field, then the README's opening summary/tagline, then a plain-language summary of what the project does inferred from its code/structure. Show the proposed description to the user and ask them to accept it as-is or supply their own replacement. Once confirmed, set it:
+
+```bash
+gh repo edit <owner>/<repo> --description "<description>"
+```
+
+Report the description that was applied.
+
+### Step 10: Apply Branch Protection
 
 Apply branch protection rules to the default branch using the GitHub API:
 
@@ -243,7 +262,7 @@ Report the settings applied:
 - Branch deletion blocked
 - Admin bypass enabled (repo owner can still push directly)
 
-### Step 10: Bump Manifest Versions, Finalize CHANGELOG, and Create GitHub Release
+### Step 11: Bump Manifest Versions, Finalize CHANGELOG, and Create GitHub Release
 
 Ask the user for a version tag. Suggest `v1.0.0` if this is the first release (no existing tags), or suggest the next patch/minor/major version based on the latest existing tag.
 
@@ -268,20 +287,20 @@ gh release create <tag> --generate-notes --latest
 
 Report the release URL, which manifest files were bumped (if any), and whether CHANGELOG.md was finalized.
 
-### Step 11: Sync Marketplace Listing (Optional)
+### Step 12: Sync Marketplace Listing (Optional)
 
 **If this project is not itself a skill or plugin** (per Step 4's detection): skip this step entirely — not applicable, don't mention it in the summary.
 
 **If it is a skill or plugin:** check for an existing entry in this skill's own `.git-release/marketplace-config.json` (see the `--marketplace` flag above) for this project's `owner/repo`.
 
-- **If a saved marketplace path exists:** ask the user: "Sync this release to `<saved-marketplace-path>` (as configured)?" If yes, run the full `--marketplace` procedure (steps 4-9 above — version detection, entry update/create, marketplace README sync, commit and push, and this project's own README install-instructions update), reusing that saved path without re-asking for a location. If no: skip, not applicable.
-- **If no saved marketplace path exists:** ask the user: "Sync this release to a marketplace listing?" If yes, run the full `--marketplace` procedure from the top (steps 1-9 above), which will ask for and save a marketplace location. If no: skip, not applicable.
+- **If a saved marketplace path exists:** ask the user: "Sync this release to `<saved-marketplace-path>` (as configured)?" If yes, run the full `--marketplace` procedure (steps 4-10 above — version detection, base-description resolution, entry update/create, marketplace README sync, commit and push, and this project's own README install-instructions update), reusing that saved path without re-asking for a location. If no: skip, not applicable.
+- **If no saved marketplace path exists:** ask the user: "Sync this release to a marketplace listing?" If yes, run the full `--marketplace` procedure from the top (steps 1-10 above), which will ask for and save a marketplace location. If no: skip, not applicable.
 
 Report which marketplace (if any) was updated, and to what version.
 
-### Step 12: Summary
+### Step 13: Summary
 
-Present a summary table of everything that was done. Include the Help mechanism, Version flag, and Manifest version(s) rows only if Step 4 / Step 10's skill-or-plugin check applied (i.e. this project is a skill/plugin); include the CHANGELOG.md row only if Step 6 found the file present; include the Marketplace listing row only if Step 11 found a match:
+Present a summary table of everything that was done. Include the Help mechanism, Version flag, and Manifest version(s) rows only if Step 4 / Step 11's skill-or-plugin check applied (i.e. this project is a skill/plugin); include the CHANGELOG.md row only if Step 6 found the file present; include the Marketplace listing row only if Step 12 found a match:
 
 ```
 ## Release Summary
@@ -296,6 +315,7 @@ Present a summary table of everything that was done. Include the Help mechanism,
 | CHANGELOG.md | Finalized: [Unreleased] → [<version>] / Empty, confirmed by user / Warning: missing (run /make-readme) |
 | .gitignore | Found / Warning: missing |
 | GitHub remote | Created: <url> / Existing: <url> |
+| Repo description | Set: "<description>" / Already set / Kept user-supplied |
 | Branch protection | Applied (PRs required, force push blocked) |
 | Manifest version(s) | Bumped to <version> in <N> file(s) |
 | Marketplace listing | Updated <marketplace>/marketplace.json to <version> / Not found |

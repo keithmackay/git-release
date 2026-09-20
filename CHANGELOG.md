@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+- `--marketplace` now mirrors the project's GitHub repo description into its marketplace.json listing (version-prefixed) instead of preserving a separately drifting description
+- Add Step 9: ensure the GitHub repo `description` field is set, proposing a one-line description (derived from the project's manifest/README) that the user can accept or replace
 - Add `--dry-run` flag: preview the full release workflow (or just `--marketplace`'s sync) and report what would happen at every mutating step, without creating/modifying/committing/pushing/tagging or calling any mutating GitHub API
 - Document mackayi marketplace installation in README
 - Fix manifest version drift: .codex-plugin/plugin.json and gemini-extension.json said 1.0.0 despite the v1.0.1 release tag
