@@ -49,7 +49,7 @@ If the user invokes this skill with a `--dry-run` flag (e.g. `/git-release --dry
 
 Concretely, in dry-run mode:
 
-- **Step 2 (LICENSE):** if missing, report "Would create LICENSE (MIT)" instead of creating/committing it.
+- **Step 2 (LICENSE):** if missing, report "Would create LICENSE (MIT)" instead of creating/committing it. If present with a stale copyright year, report "Would update LICENSE copyright year to <year>" instead of writing/committing it.
 - **Step 5 (`--version` support):** if missing, report which files would receive the flag/command (e.g. "Would add `--version` to SKILL.md, skills/<name>/SKILL.md") instead of writing them.
 - **Step 8 (GitHub remote):** if no remote, report "Would create public GitHub repo `<repo-name>`" instead of running `gh repo create`. If a remote exists and local is behind, report "Would push <N> commit(s) to origin" instead of pushing.
 - **Step 9 (repo description):** if missing, empty, or missing/mismatching the correct type prefix, report the proposed one-line description (with its type prefix) and "Would set repo description to: \"<proposed description>\"" instead of calling the API. If already set with the correct prefix, this step is a pure check and runs normally.
@@ -125,7 +125,7 @@ Check if a `LICENSE` or `LICENSE.md` or `LICENSE.txt` file exists at the project
 
 **If missing:** Create a `LICENSE` file with the full MIT License text. Use the current year and derive the copyright holder name from `git config user.name`. Stage and commit the file with the message "Add MIT license".
 
-**If present:** Report "LICENSE already exists, skipping." Do not modify it.
+**If present:** Check the copyright year in the license text (e.g. `Copyright (c) <year> <holder>`). If it's not the current year, update it to the current year and stage/commit the change with the message "Update LICENSE copyright year to <year>". Report "LICENSE already exists, updated copyright year to <year>." If the year already matches, report "LICENSE already exists, skipping." Do not otherwise modify the file.
 
 ### Step 3: Check README.md
 
@@ -315,7 +315,7 @@ Present a summary table of everything that was done. Include the Help mechanism,
 | Step | Status |
 |------|--------|
 | Git repo | Confirmed (branch: main) |
-| LICENSE | Created (MIT) / Already existed |
+| LICENSE | Created (MIT) / Already existed / Copyright year updated to <year> |
 | README.md | Found / Warning: missing |
 | Help mechanism | Found / Warning: missing (run /make-readme) |
 | Version flag | Found / Added |

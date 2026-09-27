@@ -2,7 +2,8 @@ git-release — prepare a local git project for public release on GitHub
 
 WHAT IT DOES
   Runs an idempotent, 13-step release checklist against the current
-  directory: adds an MIT license if missing, verifies README.md exists,
+  directory: adds an MIT license if missing (and keeps an existing
+  license's copyright year current), verifies README.md exists,
   checks skill/plugin projects for a --help/:help mechanism (warns and
   defers to /make-readme rather than creating one), adds a --version
   flag/:version command to skill/plugin projects that lack one (this
