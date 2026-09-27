@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [1.1.2] - 2026-09-27
+
 - Step 2 now checks an existing LICENSE's copyright year and updates it to the current year if stale
 
 ## [1.1.1] - 2026-09-20
