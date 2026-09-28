@@ -53,6 +53,7 @@ Concretely, in dry-run mode:
 - **Step 5 (`--version` support):** if missing, report which files would receive the flag/command (e.g. "Would add `--version` to SKILL.md, skills/<name>/SKILL.md") instead of writing them.
 - **Step 8 (GitHub remote):** if no remote, report "Would create public GitHub repo `<repo-name>`" instead of running `gh repo create`. If a remote exists and local is behind, report "Would push <N> commit(s) to origin" instead of pushing.
 - **Step 9 (repo description):** if missing, empty, or missing/mismatching the correct type prefix, report the proposed one-line description (with its type prefix) and "Would set repo description to: \"<proposed description>\"" instead of calling the API. If already set with the correct prefix, this step is a pure check and runs normally.
+- **Step 9b (repo topics, skills/plugins only):** if any determined topic is missing, report the proposed full topic list and "Would add topics: <missing topics>" instead of calling `gh repo edit --add-topic`. If all already present, this step is a pure check and runs normally.
 - **Step 10 (branch protection):** report "Would apply branch protection: PRs required (1 approval), stale reviews dismissed, force push blocked, branch deletion blocked" instead of calling the API.
 - **Step 11 (version bump/CHANGELOG/release):** still ask the user for a version tag (this is informational, not mutating), then report "Would bump manifest version to `<version>` in `<N>` file(s)", "Would finalize CHANGELOG.md: [Unreleased] → [<version>] - <date>" (or "Unreleased is empty — would prompt before proceeding" if applicable), and "Would create tag `<version>` and GitHub release" — without touching any file, committing, tagging, or calling `gh release create`.
 - **Step 12 / `--marketplace` procedure:** perform the read-only parts (resolving the repo, locating/asking for the marketplace config path, determining current version) normally, but report "Would update `<marketplace-name>`'s marketplace.json entry to `<version>`" / "Would create new entry for `<plugin-name>`", "Would update marketplace README.md entry", "Would update this project's own README.md Installation section" — without writing or pushing to either repo, and without saving a newly-given marketplace path into the config file (ask first: "Save this path for future runs?" — a `--dry-run` shouldn't silently persist state).
@@ -231,6 +232,32 @@ gh repo edit <owner>/<repo> --description "<description>"
 
 Report the description that was applied.
 
+### Step 9b: Ensure Repo Topics (Skills/Plugins Only)
+
+GitHub topic tags are how skill/plugin directories and search (including topic-based discovery tooling) find this project — a repo with the right description but no topics is still invisible to `gh search repos --topic <topic>`. This step only applies to skills/plugins (the same platform detection as Step 9); skip it for non-skill/plugin projects.
+
+**Determine the correct topics** based on the platform(s) detected in Step 9:
+
+- **Claude Code skill:** `claude-code-skill`, `claude-skills`, `agent-skills`
+- **Claude Code plugin:** `claude-code-plugin`, `agent-skills`
+- **Codex skill:** `codex-skill`, `agent-skills`
+- **Gemini CLI skill:** `gemini-cli-skill`, `agent-skills`
+- **Multi-platform** (per Step 9's platform list): include every platform-specific topic that applies, plus `agent-skills` once (don't duplicate it).
+
+`agent-skills` is the cross-platform umbrella tag — always include it for any skill/plugin project regardless of platform, since some discovery tooling (including skillfinder) searches on it directly rather than every platform-specific tag individually.
+
+Run `gh repo view <owner>/<repo> --json repositoryTopics -q '.repositoryTopics[].name'` to check current topics.
+
+**If all the determined topics are already present:** Report "Repo topics already set: <topics>, skipping." Do not modify.
+
+**If any are missing:** Show the full proposed topic list (existing + new) and ask the user to accept or adjust it. Once confirmed, set it:
+
+```bash
+gh repo edit <owner>/<repo> --add-topic <topic1> --add-topic <topic2> ...
+```
+
+Report the topics that were applied.
+
 ### Step 10: Apply Branch Protection
 
 Apply branch protection rules to the default branch using the GitHub API:
@@ -307,7 +334,7 @@ Report which marketplace (if any) was updated, and to what version.
 
 ### Step 13: Summary
 
-Present a summary table of everything that was done. Include the Help mechanism, Version flag, and Manifest version(s) rows only if Step 4 / Step 11's skill-or-plugin check applied (i.e. this project is a skill/plugin); include the CHANGELOG.md row only if Step 6 found the file present; include the Marketplace listing row only if Step 12 found a match:
+Present a summary table of everything that was done. Include the Help mechanism, Version flag, and Manifest version(s) rows only if Step 4 / Step 11's skill-or-plugin check applied (i.e. this project is a skill/plugin); include the Repo topics row only if Step 9b applied (same skill/plugin check); include the CHANGELOG.md row only if Step 6 found the file present; include the Marketplace listing row only if Step 12 found a match:
 
 ```
 ## Release Summary
@@ -323,6 +350,7 @@ Present a summary table of everything that was done. Include the Help mechanism,
 | .gitignore | Found / Warning: missing |
 | GitHub remote | Created: <url> / Existing: <url> |
 | Repo description | Set: "<description>" / Already set / Kept user-supplied |
+| Repo topics | Added: <topics> / Already set |
 | Branch protection | Applied (PRs required, force push blocked) |
 | Manifest version(s) | Bumped to <version> in <N> file(s) |
 | Marketplace listing | Updated <marketplace>/marketplace.json to <version> / Not found |
