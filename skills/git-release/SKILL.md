@@ -51,8 +51,10 @@ Concretely, in dry-run mode:
 
 - **Step 2 (LICENSE):** if missing, report "Would create LICENSE (MIT)" instead of creating/committing it. If present with a stale copyright year, report "Would update LICENSE copyright year to <year>" instead of writing/committing it.
 - **Step 5 (`--version` support):** if missing, report which files would receive the flag/command (e.g. "Would add `--version` to SKILL.md, skills/<name>/SKILL.md") instead of writing them.
+- **Step 5b (distributed skill README, skills/plugins only):** if a packaging folder's README.md is missing or missing required fields, report which folder(s) would get a new/updated README.md and which fields would be added, instead of writing/committing it. If every folder already has a complete one, this step is a pure check and runs normally.
 - **Step 8 (GitHub remote):** if no remote, report "Would create public GitHub repo `<repo-name>`" instead of running `gh repo create`. If a remote exists and local is behind, report "Would push <N> commit(s) to origin" instead of pushing.
 - **Step 9 (repo description):** if missing, empty, or missing/mismatching the correct type prefix, report the proposed one-line description (with its type prefix) and "Would set repo description to: \"<proposed description>\"" instead of calling the API. If already set with the correct prefix, this step is a pure check and runs normally.
+- **Step 9b (repo topics, skills/plugins only):** if anything is missing or stale, report the proposed add/remove lists and "Would add topics: <missing topics>" / "Would remove topics: <stale topics>" instead of calling `gh repo edit`. If already in sync, this step is a pure check and runs normally.
 - **Step 10 (branch protection):** report "Would apply branch protection: PRs required (1 approval), stale reviews dismissed, force push blocked, branch deletion blocked" instead of calling the API.
 - **Step 11 (version bump/CHANGELOG/release):** still ask the user for a version tag (this is informational, not mutating), then report "Would bump manifest version to `<version>` in `<N>` file(s)", "Would finalize CHANGELOG.md: [Unreleased] → [<version>] - <date>" (or "Unreleased is empty — would prompt before proceeding" if applicable), and "Would create tag `<version>` and GitHub release" — without touching any file, committing, tagging, or calling `gh release create`.
 - **Step 12 / `--marketplace` procedure:** perform the read-only parts (resolving the repo, locating/asking for the marketplace config path, determining current version) normally, but report "Would update `<marketplace-name>`'s marketplace.json entry to `<version>`" / "Would create new entry for `<plugin-name>`", "Would update marketplace README.md entry", "Would update this project's own README.md Installation section" — without writing or pushing to either repo, and without saving a newly-given marketplace path into the config file (ask first: "Save this path for future runs?" — a `--dry-run` shouldn't silently persist state).
@@ -180,6 +182,38 @@ If the user invokes this skill with a `--version` flag (e.g. `/<skill-name> --ve
 
 Present the added flag/command to the user before writing, mirroring how the help mechanism is added.
 
+### Step 5b: Ensure Distributed Skill README (Skills/Plugins Only)
+
+**If this project is not a skill/plugin** (per Step 4's detection): skip this step entirely — not applicable, don't mention it in the summary.
+
+**If it is a skill/plugin:** what actually travels with an installed skill is just the files inside its packaging folder — `skills/<name>/` for Claude Code (and any `antigravity/<name>/` copy), the files alongside `.codex-plugin/plugin.json` for Codex, the files alongside `gemini-extension.json` for Gemini. The project's root `README.md` does **not** travel with that copy unless the packaging folder *is* the project root (a bare single-platform skill with no subfolder). This means an installed skill, viewed on its own with no surrounding repo, needs its own `README.md` so whoever has it can trace it back to where it came from — this is findsafeskills' skill-distribution best practice ("Say who made it and where it came from"): https://findsafeskills.com/diy#best-practices.
+
+**Determine each packaging folder** that needs its own `README.md`: every folder containing a `SKILL.md` or a `commands/*.md` set that is distinct from the project root (i.e. `skills/<name>/`, `antigravity/<name>/`, or equivalent). If the only `SKILL.md` is at the project root with no subfolder copy, the root `README.md` itself is the distributed copy — check it there instead of creating a separate one.
+
+**For each such folder, check whether its `README.md` (create one if totally missing) contains, at minimum:**
+- A one-paragraph description of what it does and when it triggers (pull from the manifest/`SKILL.md` frontmatter `description` if not already present)
+- Who made it and how to reach them (derive from `git config user.name` / `user.email`, falling back to asking the user if git config has no email)
+- The source repo URL, written out in full (`git remote get-url origin`, normalized to `https://github.com/<owner>/<repo>`)
+- How to update it (a `git pull` in the install directory, or the marketplace reinstall command if Step 12 found a saved marketplace entry)
+- The current version (matching the manifest `version` field, or the latest tag if this project has no manifest)
+- The license (per Step 2) and where to report an issue (`<repo-url>/issues`)
+
+Use this block format (adapt labels/values, don't force it verbatim if the existing README already covers the same ground in its own voice):
+
+```
+Version <version> · <LICENSE type> license
+Source:  <repo-url>
+Author:  <name> <<email>>
+Update:  git -C ~/.claude/skills/<skill-name> pull   (or: reinstall via the marketplace, if applicable)
+Issues:  <repo-url>/issues
+```
+
+**If a folder's `README.md` is missing entirely:** show the proposed full file (opening paragraph + the block above) and ask the user to confirm before writing. Stage and commit with message "Add distributed README.md to <folder>".
+
+**If present but missing one or more of the items above:** show just the proposed additions (don't rewrite existing prose) and ask before applying. Report which folder(s) were updated and which fields were added.
+
+**If every packaging folder already has a `README.md` covering all the items:** report "Distributed README found for <folder(s)>, skipping."
+
 ### Step 6: Check CHANGELOG.md
 
 Check if `CHANGELOG.md` exists.
@@ -230,6 +264,34 @@ gh repo edit <owner>/<repo> --description "<description>"
 ```
 
 Report the description that was applied.
+
+### Step 9b: Keep Repo Topics in Sync (Skills/Plugins Only)
+
+GitHub topic tags are how skill/plugin directories and search (including topic-based discovery tooling, and findsafeskills' own listing search) find this project — a repo with the right description but no topics is still invisible to `gh search repos --topic <topic>`. This step only applies to skills/plugins (the same platform detection as Step 9); skip it for non-skill/plugin projects.
+
+**Determine the correct topics** based on the platform(s) actually present (same file-based detection as Step 4/9 — `SKILL.md` root or `skills/*/`, `.codex-plugin/plugin.json`, `gemini-extension.json`/`GEMINI.md`, or a commands-based plugin manifest):
+
+- **Claude Code skill:** `claude-code-skill`, `claude-skills`, `agent-skills`
+- **Claude Code plugin:** `claude-code-plugin`, `agent-skills`
+- **Codex skill:** `codex-skill`, `agent-skills`
+- **Gemini CLI skill:** `gemini-cli-skill`, `agent-skills`
+- **Multi-platform:** include every platform-specific topic that applies, plus `agent-skills` once (don't duplicate it).
+
+`agent-skills` is the cross-platform umbrella tag — always include it for any skill/plugin project regardless of platform, since some discovery tooling (including skillfinder and findsafeskills) searches on it directly rather than every platform-specific tag individually.
+
+This step keeps topics **in sync**, not just additive — run it on every release so a platform a project drops (e.g. it no longer ships a `gemini-extension.json`) doesn't leave a stale tag behind:
+
+1. Run `gh repo view <owner>/<repo> --json repositoryTopics -q '.repositoryTopics[].name'` to get the current topic list.
+2. Compute **missing** = determined topics not currently present, and **stale** = currently-present topics that are part of this skill's known topic vocabulary (`claude-code-skill`, `claude-skills`, `claude-code-plugin`, `codex-skill`, `gemini-cli-skill`, `agent-skills`) but not in the determined set for this project's current platforms. Never touch a topic outside that vocabulary (e.g. a manually-added unrelated topic like `productivity`) — this step only reconciles the skill/plugin platform tags, not the full topic list.
+3. **If nothing is missing and nothing is stale:** report "Repo topics already in sync: <topics>, skipping." Do not modify.
+4. **If anything is missing or stale:** show the proposed change (topics to add, topics to remove, and the resulting full list) and ask the user to accept or adjust it. Once confirmed, apply both in one call each (the flag takes a single comma-separated value, not repeated flags):
+
+```bash
+gh repo edit <owner>/<repo> --add-topic <topic1>,<topic2>,...
+gh repo edit <owner>/<repo> --remove-topic <stale1>,<stale2>,...
+```
+
+Report the resulting topic list, noting what was added and what (if anything) was removed.
 
 ### Step 10: Apply Branch Protection
 
@@ -307,7 +369,7 @@ Report which marketplace (if any) was updated, and to what version.
 
 ### Step 13: Summary
 
-Present a summary table of everything that was done. Include the Help mechanism, Version flag, and Manifest version(s) rows only if Step 4 / Step 11's skill-or-plugin check applied (i.e. this project is a skill/plugin); include the CHANGELOG.md row only if Step 6 found the file present; include the Marketplace listing row only if Step 12 found a match:
+Present a summary table of everything that was done. Include the Help mechanism, Distributed README, Version flag, and Manifest version(s) rows only if Step 4 / Step 11's skill-or-plugin check applied (i.e. this project is a skill/plugin); include the Repo topics row only if Step 9b applied (same skill/plugin check); include the CHANGELOG.md row only if Step 6 found the file present; include the Marketplace listing row only if Step 12 found a match:
 
 ```
 ## Release Summary
@@ -318,11 +380,13 @@ Present a summary table of everything that was done. Include the Help mechanism,
 | LICENSE | Created (MIT) / Already existed / Copyright year updated to <year> |
 | README.md | Found / Warning: missing |
 | Help mechanism | Found / Warning: missing (run /make-readme) |
+| Distributed README | Found for all packaging folders / Added to <folder(s)> / Updated <field(s)> in <folder(s)> |
 | Version flag | Found / Added |
 | CHANGELOG.md | Finalized: [Unreleased] → [<version>] / Empty, confirmed by user / Warning: missing (run /make-readme) |
 | .gitignore | Found / Warning: missing |
 | GitHub remote | Created: <url> / Existing: <url> |
 | Repo description | Set: "<description>" / Already set / Kept user-supplied |
+| Repo topics | In sync: <topics> / Added: <topics>, Removed: <topics> |
 | Branch protection | Applied (PRs required, force push blocked) |
 | Manifest version(s) | Bumped to <version> in <N> file(s) |
 | Marketplace listing | Updated <marketplace>/marketplace.json to <version> / Not found |

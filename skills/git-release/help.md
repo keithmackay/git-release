@@ -1,19 +1,27 @@
 git-release — prepare a local git project for public release on GitHub
 
 WHAT IT DOES
-  Runs an idempotent, 13-step release checklist against the current
-  directory: adds an MIT license if missing, verifies README.md exists,
+  Runs an idempotent, 15-step release checklist against the current
+  directory: adds an MIT license if missing (and keeps an existing
+  license's copyright year current), verifies README.md exists,
   checks skill/plugin projects for a --help/:help mechanism (warns and
   defers to /make-readme rather than creating one), adds a --version
   flag/:version command to skill/plugin projects that lack one (this
   step creates it directly, reporting installed version and -- best
-  effort -- whether a newer GitHub release is available), verifies
-  CHANGELOG.md and .gitignore exist, creates a GitHub remote if needed,
-  ensures the GitHub repo's description field is set and leads with
-  what the project is (e.g. "Claude/Codex/Gemini skill: ", "Claude
-  Code plugin: ", or another fitting noun), proposing a one-line
-  description you can accept or replace, applies branch protection
-  requiring pull requests, bumps the
+  effort -- whether a newer GitHub release is available), ensures each
+  skill/plugin packaging folder that actually travels with an install
+  (skills/<name>/, antigravity/<name>/, etc.) has its own README.md
+  naming who made it, the source repo, how to update it, its version,
+  and its license -- per findsafeskills' skill-distribution best
+  practices -- verifies CHANGELOG.md and .gitignore exist, creates a
+  GitHub remote if needed, ensures the GitHub repo's description field
+  is set and leads with what the project is (e.g. "Claude/Codex/Gemini
+  skill: ", "Claude Code plugin: ", or another fitting noun), proposing
+  a one-line description you can accept or replace, keeps the repo's
+  GitHub topics in sync with its actual platform(s) -- adding any
+  missing platform tag and removing any stale one left over from a
+  dropped platform -- applies branch protection requiring pull
+  requests, bumps the
   "version" field in every plugin manifest (.claude-plugin/plugin.json,
   .codex-plugin/plugin.json, gemini-extension.json, including
   skills/<name>/ copies) to match the release tag, finalizes
