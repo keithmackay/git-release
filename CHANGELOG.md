@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+- Add Step 5b: ensure every skill/plugin packaging folder that actually travels with an install (skills/<name>/, antigravity/<name>/, etc.) has its own README.md naming who made it, the source repo, how to update it, its version, and its license, per findsafeskills' skill-distribution best practices
+- Step 9b now keeps GitHub topics in sync rather than only adding missing ones — it also removes a stale platform tag left over when a project drops that platform, and fixes the `--add-topic`/`--remove-topic` invocation to pass a single comma-separated value instead of repeated flags
+- Add Step 9b: ensure correct GitHub topic tags for skills/plugins
+
 ## [1.1.2] - 2026-09-27
 
 - Step 2 now checks an existing LICENSE's copyright year and updates it to the current year if stale
