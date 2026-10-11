@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-10-11
+
 - Add Step 3b: warn if README.md's install instructions pipe a download straight into a shell instead of download-verify-run
 - Add Step 5c: check skill/plugin projects with mutating actions for a documented `--dry-run` flag (warns only; doesn't add the logic itself)
 - Add Step 5d: check any scripts/CLIs a skill/plugin ships for `--help`/`--version`/`--dry-run` support (warns only)
