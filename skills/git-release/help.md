@@ -1,37 +1,53 @@
 git-release — prepare a local git project for public release on GitHub
 
 WHAT IT DOES
-  Runs an idempotent, 15-step release checklist against the current
-  directory: adds an MIT license if missing (and keeps an existing
-  license's copyright year current), verifies README.md exists,
-  checks skill/plugin projects for a --help/:help mechanism (warns and
-  defers to /make-readme rather than creating one), adds a --version
-  flag/:version command to skill/plugin projects that lack one (this
-  step creates it directly, reporting installed version and -- best
-  effort -- whether a newer GitHub release is available), ensures each
-  skill/plugin packaging folder that actually travels with an install
-  (skills/<name>/, antigravity/<name>/, etc.) has its own README.md
-  naming who made it, the source repo, how to update it, its version,
-  and its license -- per findsafeskills' skill-distribution best
-  practices -- verifies CHANGELOG.md and .gitignore exist, creates a
-  GitHub remote if needed, ensures the GitHub repo's description field
-  is set and leads with what the project is (e.g. "Claude/Codex/Gemini
-  skill: ", "Claude Code plugin: ", or another fitting noun), proposing
-  a one-line description you can accept or replace, keeps the repo's
-  GitHub topics in sync with its actual platform(s) -- adding any
-  missing platform tag and removing any stale one left over from a
-  dropped platform -- applies branch protection requiring pull
-  requests, bumps the
-  "version" field in every plugin manifest (.claude-plugin/plugin.json,
-  .codex-plugin/plugin.json, gemini-extension.json, including
-  skills/<name>/ copies) to match the release tag, finalizes
-  CHANGELOG.md by renaming its "Unreleased" section to the new version
-  and date (never inventing changelog content, only renaming/stamping
-  what's already written there -- and refusing to proceed silently if
-  Unreleased is empty, asking for confirmation instead), optionally
-  syncs this plugin's listing in a marketplace.json it's registered in
-  (see --marketplace below), and cuts a tagged GitHub release. Each
-  step checks current state first and reports "already exists,
+  Runs an idempotent, 20-step release checklist (several apply only to
+  skill/plugin projects, or only when relevant) against the current
+  directory, following findsafeskills' skill-development and
+  distribution best practices throughout:
+    - Adds an MIT license if missing, and keeps an existing license's
+      copyright year current
+    - Verifies README.md exists, and warns if its install instructions
+      pipe a download straight into a shell instead of
+      download-verify-run
+    - Checks skill/plugin projects for a --help/:help mechanism (warns
+      and defers to /make-readme rather than creating one)
+    - Adds a --version flag/:version command to skill/plugin projects
+      that lack one, reporting installed version and -- best effort --
+      whether a newer GitHub release is available
+    - Ensures each skill/plugin packaging folder that actually travels
+      with an install (skills/<name>/, antigravity/<name>/, etc.) has
+      its own README.md naming who made it, the source repo, how to
+      update it, its version, and its license
+    - For skill/plugin projects with mutating actions, checks for a
+      documented --dry-run flag, and checks any shipped scripts/CLIs
+      for --help/--version/--dry-run support (warns only; doesn't
+      write this code itself)
+    - Verifies CHANGELOG.md, .gitignore, and SECURITY.md exist, and
+      checks for a dependency lockfile when a package manifest is
+      present
+    - Creates a GitHub remote if needed
+    - Ensures the GitHub repo's description field is set and leads
+      with what the project is (e.g. "Claude/Codex/Gemini skill: ",
+      "Claude Code plugin: ", or another fitting noun), proposing a
+      one-line description you can accept or replace
+    - Keeps the repo's GitHub topics in sync with its actual
+      platform(s) -- adding any missing platform tag and removing any
+      stale one left over from a dropped platform
+    - Applies branch protection requiring pull requests
+    - Bumps the "version" field in every plugin manifest
+      (.claude-plugin/plugin.json, .codex-plugin/plugin.json,
+      gemini-extension.json, including skills/<name>/ copies) to match
+      the release tag, finalizes CHANGELOG.md by renaming its
+      "Unreleased" section to the new version and date (never
+      inventing changelog content, only renaming/stamping what's
+      already written there -- and refusing to proceed silently if
+      Unreleased is empty, asking for confirmation instead), and
+      appends the same entry to versions.json if one exists
+    - Optionally syncs this plugin's listing in a marketplace.json it's
+      registered in (see --marketplace below)
+    - Cuts a tagged GitHub release
+  Each step checks current state first and reports "already exists,
   skipping" rather than clobbering existing files or config.
 
 WHAT IT NEEDS

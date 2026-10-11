@@ -45,7 +45,7 @@ If the user invokes this skill with a `--version` flag (e.g. `/git-release --ver
 
 ### `--dry-run`
 
-If the user invokes this skill with a `--dry-run` flag (e.g. `/git-release --dry-run`), run through the full Workflow below, but treat every step that would create, modify, commit, push, tag, or call a mutating GitHub API as report-only: state what it *would* do, then move on without doing it. Steps that are already pure checks (1, 3, 4, 6, 7) run exactly as normal — there's nothing to hold back. Combine with `--marketplace` (i.e. `--marketplace --dry-run`) to preview that flag's sync instead of the full release workflow, under the same rule.
+If the user invokes this skill with a `--dry-run` flag (e.g. `/git-release --dry-run`), run through the full Workflow below, but treat every step that would create, modify, commit, push, tag, or call a mutating GitHub API as report-only: state what it *would* do, then move on without doing it. Steps that are already pure checks (1, 3, 3b, 4, 5c, 5d, 6, 7, 7b, 7c) run exactly as normal — there's nothing to hold back. Combine with `--marketplace` (i.e. `--marketplace --dry-run`) to preview that flag's sync instead of the full release workflow, under the same rule.
 
 Concretely, in dry-run mode:
 
@@ -56,7 +56,7 @@ Concretely, in dry-run mode:
 - **Step 9 (repo description):** if missing, empty, or missing/mismatching the correct type prefix, report the proposed one-line description (with its type prefix) and "Would set repo description to: \"<proposed description>\"" instead of calling the API. If already set with the correct prefix, this step is a pure check and runs normally.
 - **Step 9b (repo topics, skills/plugins only):** if anything is missing or stale, report the proposed add/remove lists and "Would add topics: <missing topics>" / "Would remove topics: <stale topics>" instead of calling `gh repo edit`. If already in sync, this step is a pure check and runs normally.
 - **Step 10 (branch protection):** report "Would apply branch protection: PRs required (1 approval), stale reviews dismissed, force push blocked, branch deletion blocked" instead of calling the API.
-- **Step 11 (version bump/CHANGELOG/release):** still ask the user for a version tag (this is informational, not mutating), then report "Would bump manifest version to `<version>` in `<N>` file(s)", "Would finalize CHANGELOG.md: [Unreleased] → [<version>] - <date>" (or "Unreleased is empty — would prompt before proceeding" if applicable), and "Would create tag `<version>` and GitHub release" — without touching any file, committing, tagging, or calling `gh release create`.
+- **Step 11 (version bump/CHANGELOG/release):** still ask the user for a version tag (this is informational, not mutating), then report "Would bump manifest version to `<version>` in `<N>` file(s)", "Would finalize CHANGELOG.md: [Unreleased] → [<version>] - <date>" (or "Unreleased is empty — would prompt before proceeding" if applicable), "Would append `<version>` to versions.json" (if one exists), and "Would create tag `<version>` and GitHub release" — without touching any file, committing, tagging, or calling `gh release create`.
 - **Step 12 / `--marketplace` procedure:** perform the read-only parts (resolving the repo, locating/asking for the marketplace config path, determining current version) normally, but report "Would update `<marketplace-name>`'s marketplace.json entry to `<version>`" / "Would create new entry for `<plugin-name>`", "Would update marketplace README.md entry", "Would update this project's own README.md Installation section" — without writing or pushing to either repo, and without saving a newly-given marketplace path into the config file (ask first: "Save this path for future runs?" — a `--dry-run` shouldn't silently persist state).
 
 End with the same Step 12 summary table, but every row that describes a would-be action is prefixed `Would:` (e.g. `Would: Create (MIT)`), and the table itself is headed with **"## Dry Run — no changes were made"** instead of "## Release Summary".
@@ -137,6 +137,14 @@ Check if `README.md` exists and has more than just a title line.
 
 **If present:** Report "README.md found." Continue.
 
+### Step 3b: Check Install Instructions Don't Pipe to Shell
+
+Scan `README.md`'s installation/usage sections for a download-straight-into-a-shell pattern — e.g. `curl ... | sh`, `curl ... | bash`, or the `wget` equivalent. findsafeskills' safety guidance flags this: download it, say how to verify it, then run it, rather than piping it blind.
+
+**If found:** warn the user: "README.md's install instructions pipe a download directly into a shell (`<matched line>`) — consider splitting this into download, verify, then run steps." Do not rewrite the README yourself — that's a content decision for the author.
+
+**If not found (or no README):** report "No pipe-to-shell install pattern found." Continue.
+
 ### Step 4: Check Help Mechanism (Skills/Plugins Only)
 
 Determine whether this project is itself an agent skill or plugin: look for a `SKILL.md` file (at the project root or in a `skills/*/` subdirectory) or a `.codex-plugin/plugin.json` manifest.
@@ -214,6 +222,32 @@ Issues:  <repo-url>/issues
 
 **If every packaging folder already has a `README.md` covering all the items:** report "Distributed README found for <folder(s)>, skipping."
 
+### Step 5c: Check `--dry-run` Support for Mutating Skills/Plugins
+
+**If this project is not a skill/plugin** (per Step 4's detection): skip this step entirely — not applicable, don't mention it in the summary.
+
+**If it is a skill/plugin:** determine, heuristically, whether its documented workflow performs mutating actions — writes or deletes files, calls a paid or external API, or sends data somewhere — beyond pure local analysis/reporting. Look for things like `git commit`/`git push`, `gh api --method POST/PUT/PATCH/DELETE`, `gh release create`, file-write instructions, or similar side effects described in its `SKILL.md`/command files.
+
+- **If it has no such mutating actions** (e.g. a pure evaluate-and-report skill): skip this step, not applicable — don't mention it in the summary.
+- **If it has mutating actions and already documents a `--dry-run` flag** (or an equivalent preview mode) that reports what would happen without doing it: report "`--dry-run` found, skipping."
+- **If it has mutating actions and no `--dry-run` flag is documented:** warn the user: "This skill performs mutating actions (`<brief list>`) but has no `--dry-run` flag to preview them first — findsafeskills' CLI guidance recommends one. Consider adding one." Do not design or add the dry-run logic yourself — unlike `--version` (which is mechanical and this skill adds directly), a meaningful dry-run requires per-step judgment about what to report at each mutating point, so this is left to the author.
+
+### Step 5d: Check Shipped Scripts/CLIs Follow CLI Best Practices (Skills/Plugins Only)
+
+**If this project is not a skill/plugin** (per Step 4's detection): skip this step entirely — not applicable, don't mention it in the summary.
+
+**If it is a skill/plugin:** check whether it ships any executable script, CLI, or MCP server of its own beyond the skill manifest itself — a `scripts/` directory with executable entrypoints, a `package.json` `bin` field, a `pyproject.toml` `[project.scripts]` section, or similar.
+
+**If it ships none:** skip this step, not applicable — don't mention it in the summary.
+
+**If it does:** for each such entrypoint, do a best-effort static check (read its own argument-parsing/usage code or text, don't execute it) of whether it supports:
+- `--help`: usage, every option, examples, and what the exit codes mean
+- `--version`: prints the name and version (matching the manifest), then exits 0
+- `--dry-run`: for anything that writes/deletes files or calls a paid/external API — shows what would happen without doing it
+
+- **If every shipped entrypoint already supports the applicable flags:** report "Shipped CLI(s) already support --help/--version/--dry-run where applicable, skipping."
+- **If any are missing:** warn the user, listing which entrypoint is missing which flag(s), citing findsafeskills' CLI guidance (`--help`/`--version`/`--dry-run` conventions, non-zero exit on failure, secrets from environment variables rather than arguments, never printed). Do not add this code yourself — these are per-script implementation details outside this skill's scope.
+
 ### Step 6: Check CHANGELOG.md
 
 Check if `CHANGELOG.md` exists.
@@ -229,6 +263,26 @@ Check if `.gitignore` exists.
 **If missing:** Warn the user: "No .gitignore found. Consider adding one to prevent committing build artifacts, secrets, or OS files."
 
 **If present:** Report ".gitignore found." Continue.
+
+### Step 7b: Check SECURITY.md
+
+Check if `SECURITY.md` exists.
+
+**If missing:** Warn the user: "No SECURITY.md found. Consider adding one (or running `/make-readme`) describing how to report a security vulnerability — findsafeskills' safety guidance lists this as a trust signal reviewers look for." Do not create it yourself — creating the file is `/make-readme`'s job, not this skill's.
+
+**If present:** Report "SECURITY.md found." Continue.
+
+### Step 7c: Check Dependency Lockfile (If Applicable)
+
+Check whether a dependency manifest exists at the project root: `package.json`, `requirements.txt`, `pyproject.toml`, `Gemfile`, `go.mod`, or `Cargo.toml`.
+
+**If none exist:** skip this step, not applicable — don't mention it in the summary.
+
+**If one exists:** check for its matching lockfile — `package-lock.json`/`yarn.lock`/`pnpm-lock.yaml` for `package.json`; `poetry.lock`/`uv.lock` for `pyproject.toml`; `requirements.txt` pins its own versions directly (no separate lockfile expected); `Gemfile.lock` for `Gemfile`; `go.sum` for `go.mod`; `Cargo.lock` for `Cargo.toml`.
+
+**If missing:** warn the user: "No lockfile found for `<manifest>`. Consider committing one to pin dependency versions — findsafeskills notes this as a safety signal reviewers look for."
+
+**If present:** report "`<lockfile>` found." Continue.
 
 ### Step 8: Ensure GitHub Remote
 
@@ -346,7 +400,9 @@ Ask the user for a version tag. Suggest `v1.0.0` if this is the first release (n
 
 **If `CHANGELOG.md` is missing:** skip this — not applicable.
 
-Stage and commit the manifest bump and CHANGELOG finalization together with the message "Bump version to <version>" before creating the tag, so the tagged commit already reflects the version being released.
+**Optional — `versions.json`:** if this project already has a `versions.json` at its root (a flat map of version → short changelog note, a pattern borrowed from Obsidian's community-plugin convention and called out in findsafeskills' versioning guidance), append an entry for the new version using the same `Unreleased` content just finalized above — don't invent new text, just carry over what's already written. If no `versions.json` exists, don't create one automatically; it's optional tooling-readable history, not a requirement.
+
+Stage and commit the manifest bump, CHANGELOG finalization, and any `versions.json` update together with the message "Bump version to <version>" before creating the tag, so the tagged commit already reflects the version being released.
 
 Create the release:
 
@@ -369,7 +425,7 @@ Report which marketplace (if any) was updated, and to what version.
 
 ### Step 13: Summary
 
-Present a summary table of everything that was done. Include the Help mechanism, Distributed README, Version flag, and Manifest version(s) rows only if Step 4 / Step 11's skill-or-plugin check applied (i.e. this project is a skill/plugin); include the Repo topics row only if Step 9b applied (same skill/plugin check); include the CHANGELOG.md row only if Step 6 found the file present; include the Marketplace listing row only if Step 12 found a match:
+Present a summary table of everything that was done. Include the Help mechanism, Distributed README, `--dry-run` support, Shipped CLI check, Version flag, and Manifest version(s) rows only if Step 4 / Step 11's skill-or-plugin check applied (i.e. this project is a skill/plugin) and that step wasn't itself skipped as not-applicable; include the Repo topics row only if Step 9b applied (same skill/plugin check); include the CHANGELOG.md row only if Step 6 found the file present; include the Lockfile row only if Step 7c found a dependency manifest; include the Marketplace listing row only if Step 12 found a match:
 
 ```
 ## Release Summary
@@ -379,11 +435,16 @@ Present a summary table of everything that was done. Include the Help mechanism,
 | Git repo | Confirmed (branch: main) |
 | LICENSE | Created (MIT) / Already existed / Copyright year updated to <year> |
 | README.md | Found / Warning: missing |
+| Install instructions | No pipe-to-shell pattern found / Warning: pipes to shell |
 | Help mechanism | Found / Warning: missing (run /make-readme) |
 | Distributed README | Found for all packaging folders / Added to <folder(s)> / Updated <field(s)> in <folder(s)> |
 | Version flag | Found / Added |
+| `--dry-run` support | Found / Not applicable (no mutating actions) / Warning: missing |
+| Shipped CLI check | Compliant / Not applicable (no scripts/CLI shipped) / Warning: missing flags on <entrypoint(s)> |
 | CHANGELOG.md | Finalized: [Unreleased] → [<version>] / Empty, confirmed by user / Warning: missing (run /make-readme) |
 | .gitignore | Found / Warning: missing |
+| SECURITY.md | Found / Warning: missing (run /make-readme) |
+| Lockfile | Found / Warning: missing |
 | GitHub remote | Created: <url> / Existing: <url> |
 | Repo description | Set: "<description>" / Already set / Kept user-supplied |
 | Repo topics | In sync: <topics> / Added: <topics>, Removed: <topics> |
