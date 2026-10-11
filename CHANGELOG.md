@@ -6,9 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+- Add Step 3b: warn if README.md's install instructions pipe a download straight into a shell instead of download-verify-run
+- Add Step 5c: check skill/plugin projects with mutating actions for a documented `--dry-run` flag (warns only; doesn't add the logic itself)
+- Add Step 5d: check any scripts/CLIs a skill/plugin ships for `--help`/`--version`/`--dry-run` support (warns only)
+- Add Step 7b: check for a SECURITY.md, deferring creation to /make-readme like the other ancillary docs
+- Add Step 7c: check for a dependency lockfile when a package manifest (package.json, pyproject.toml, etc.) is present
+- Step 11 now appends the release entry to versions.json too, if one already exists
 - Add Step 5b: ensure every skill/plugin packaging folder that actually travels with an install (skills/<name>/, antigravity/<name>/, etc.) has its own README.md naming who made it, the source repo, how to update it, its version, and its license, per findsafeskills' skill-distribution best practices
 - Step 9b now keeps GitHub topics in sync rather than only adding missing ones — it also removes a stale platform tag left over when a project drops that platform, and fixes the `--add-topic`/`--remove-topic` invocation to pass a single comma-separated value instead of repeated flags
-- Add Step 9b: ensure correct GitHub topic tags for skills/plugins
 
 ## [1.1.2] - 2026-09-27
 
